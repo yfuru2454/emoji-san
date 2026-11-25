@@ -141,6 +141,11 @@ if rows:
     lang = (QgsApplication.locale() or "en")[:2]
     if lang == "en":
         report(None, "local-language names", "QGIS is in English")
+    elif not local:  # optional: LOCALE='en' was chosen or CLDR unreachable
+        report(None, "local-language names",
+               "none in index.csv (installed with LOCALE='en', or the "
+               "name data could not be downloaded; run install.py again "
+               "to retry)")
     else:
         filled = sum(1 for r in rows if local and r.get(local[0]))
         report(bool(local) and filled > 0.9 * len(rows),

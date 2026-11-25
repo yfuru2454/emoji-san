@@ -19,10 +19,11 @@ again with another SET at any time:
   - downgrade: removes the emoji that are not in the smaller set
                (maps using those show a "?" marker until you upgrade)
 
-Saving a project embeds the EmOji-san SVGs it uses, so the saved file
-works on any computer (on by default; EMBED=False; in front turns it
-off). This adds a few marked lines to <QGIS3 settings folder>/startup.py,
-which QGIS runs at every start.
+Optional: EMBED=True; in front makes QGIS embed the EmOji-san SVGs into
+every project you save, so the file works on any computer. It adds a
+few marked lines to <QGIS3 settings folder>/startup.py, which QGIS runs
+at every start (all profiles). Off by default; EMBED=False; removes it.
+Without EMBED, a re-run keeps whatever you chose before.
 
 Files go to <QGIS3 settings folder>/EmOji-san/<Category>/, which is
 registered as an SVG path (Settings > Options > System > SVG paths).
@@ -56,7 +57,7 @@ SET = _g.get("SET") or ("L" if _g.get("FULL") else None)  # None: see main
 if SET:
     SET = ALIASES.get(str(SET).strip().lower(), str(SET).strip())
 LOCALE = _g.get("LOCALE", None)         # e.g. "de"; default: QGIS's own
-EMBED = bool(_g.get("EMBED", True))     # embed SVGs when saving projects
+EMBED = _g.get("EMBED", None)           # True/False; None = keep as is
 ZIP_URL = _g.get("ZIP_URL",             # override for testing/mirrors
                  "https://github.com/%s/archive/refs/tags/%s.zip"
                  % (REPO, TAG))
@@ -195,7 +196,9 @@ END = "# <<< EmOji-san <<<"
 def _set_embed(root, on):
     """Add/remove the start-up hook in <QGIS3>/startup.py (the file QGIS
     runs at every start, for all profiles; it sits next to the EmOji-san
-    folder) and switch it on/off in this session. Returns its path."""
+    folder) and switch it on/off in this session. on=None keeps the
+    current state. Returns the resulting state (True/False), or None
+    outside QGIS. startup.py is not touched unless the state changes."""
     try:
         import qgis.core  # noqa: F401  (only inside QGIS)
     except ImportError:
@@ -206,11 +209,18 @@ def _set_embed(root, on):
     if os.path.isfile(startup):
         with open(startup, encoding="utf-8") as f:
             text = f.read()
-    if BEGIN in text and END in text:  # drop our old block, keep the rest
+    current = BEGIN in text and END in text
+    on = current if on is None else bool(on)
+    hook = os.path.join(root, "embed_on_save.py")
+    if on == current:  # nothing to change in startup.py
+        if on and os.path.isfile(hook):  # make sure it runs this session
+            exec(open(hook, "rb").read(), {"__name__": "emoji_san_embed",
+                                           "EMOJI_SAN_EMBED": True})
+        return on
+    if current:  # drop our old block, keep the rest
         a, rest = text.split(BEGIN, 1)
         text = a.rstrip("\n") + rest.split(END, 1)[1]
         text = text.strip("\n") + ("\n" if text.strip() else "")
-    hook = os.path.join(root, "embed_on_save.py")
     if on:
         text += ("\n" if text else "") + (
             "%s\ntry:\n    exec(open(%r, 'rb').read(), "
@@ -223,7 +233,7 @@ def _set_embed(root, on):
     if os.path.isfile(hook):  # apply now, without restarting QGIS
         exec(open(hook, "rb").read(), {"__name__": "emoji_san_embed",
                                        "EMOJI_SAN_EMBED": on})
-    return startup
+    return on
 
 
 def main():
@@ -294,17 +304,19 @@ def main():
 
     col = _write_index(root, rows)
     newly = _register(root)
-    startup = _set_embed(root, EMBED)
+    embed = _set_embed(root, EMBED)
     msg = "EmOji-san %s: %d emoji (+%d added, -%d removed) -> %s" % (
         SET, len(rows), added, removed, root)
     print(msg)
     print("  index.csv%s" % ((" (+ %s)" % col) if col else ""))
     if newly:
         print("  registered as an SVG path (Settings > Options > System)")
-    if startup:
-        print("  saving a project embeds its EmOji-san SVGs: %s"
-              % ("ON (turn off: EMBED=False; in front)" if EMBED else
-                 "OFF (turn on: run again without EMBED=False)"))
+    if embed:
+        print("  auto-embed SVGs when saving projects: ON "
+              "(turn off: EMBED=False; in front)")
+    elif embed is False:
+        print("  sharing a project? embed the SVG in the symbol "
+              "('...' > Embed File) or install with EMBED=True;")
     if removed:
         print("  note: maps that used the removed emoji show '?' until you "
               "install a larger set again")

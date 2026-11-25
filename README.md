@@ -20,7 +20,6 @@ Google Noto Emoji, installed with one line in the Python console.
    EmOji-san S: 200 emoji (+200 added, -0 removed) -> .../QGIS3/EmOji-san
      index.csv (+ name_ja)
      registered as an SVG path (Settings > Options > System)
-     saving a project embeds its EmOji-san SVGs: ON (turn off: EMBED=False; in front)
    ```
 
 4. Open a point layer's **Symbology**, set the symbol layer type to
@@ -50,16 +49,19 @@ Google Noto Emoji, installed with one line in the Python console.
     smaller set. Maps using them show `?` until you upgrade again.
 - Names in another language in `index.csv`: `LOCALE='de';` in front.
 
-## Saved projects work on any computer
+## Sharing a project with someone
 
-- When you save a project, the EmOji-san SVGs it uses are embedded in
-  the `.qgs` / `.qgz` file. Others can open it without EmOji-san.
-- Only the saved file changes. Other SVGs are left as they are.
-- It is on by default. To turn it off, run the install line with
-  `EMBED=False;` in front. Run it again without that to turn it back on.
-- How it works: the installer adds a few marked lines to `startup.py` in
-  the QGIS settings folder, which QGIS runs at every start. Uninstall
-  removes them.
+EmOji-san symbols point to files on your computer. Before you hand a
+project to someone who may not have EmOji-san, embed the SVGs. Pick one:
+
+- **By hand**: in the SVG marker settings, click **…** next to the file
+  path and choose **Embed File**.
+- **Use the S set as embedded symbols** (next section): they are
+  embedded from the start.
+- **Automatically on every save**: install with `EMBED=True;` in front.
+  This adds a few marked lines to `startup.py` in the QGIS settings
+  folder, which QGIS runs at every start. `EMBED=False;` removes them.
+  Off by default.
 
 ## The S set as embedded symbols (no install needed)
 
@@ -75,7 +77,7 @@ Google Noto Emoji, installed with one line in the Python console.
 import urllib.request as u; exec(u.urlopen('https://raw.githubusercontent.com/yfuru2454/emoji-san/v1.0.0/tests/check_install.py').read())
 ```
 
-- Expected: `Result: ALL GOOD (10 passed, 0 failed, 0 skipped)`
+- Expected: a line starting with `Result: ALL GOOD`
 - It also adds an "EmOji-san demo" layer with 8 emoji. Put
   `DEMO = False; ` in front to skip it.
 
@@ -153,7 +155,6 @@ Google の Noto Emoji を、Pythonコンソールに1行貼るだけでインス
    EmOji-san S: 200 emoji (+200 added, -0 removed) -> .../QGIS3/EmOji-san
      index.csv (+ name_ja)
      registered as an SVG path (Settings > Options > System)
-     saving a project embeds its EmOji-san SVGs: ON (turn off: EMBED=False; in front)
    ```
 
 4. ポイントレイヤの **シンボロジ** で、シンボルレイヤの種類を
@@ -181,16 +182,18 @@ Google の Noto Emoji を、Pythonコンソールに1行貼るだけでインス
     それを使っている地図は、アップグレードし直すまで `?` で表示されます
 - `index.csv` の名前を別の言語にする: 先頭に `LOCALE='de';`
 
-## 保存したプロジェクトはどのPCでも開ける
+## プロジェクトを人に渡すとき
 
-- プロジェクトを保存すると、使っているEmOji-sanのSVGが `.qgs` / `.qgz`
-  の中に埋め込まれます。EmOji-sanを入れていない人でも開けます
-- 変わるのは保存されるファイルだけです。ほかのSVGはそのままです
-- 初期設定でオンです。オフにするには、インストールの1行の先頭に
-  `EMBED=False;` を付けて実行します。付けずに実行し直すとオンに戻ります
-- しくみ: インストーラが、QGISの設定フォルダにある `startup.py`
-  （QGISが起動のたびに実行するファイル）に、印を付けた数行を追加します。
-  アンインストールで消えます
+EmOji-sanのシンボルは、自分のPCのファイルを参照しています。EmOji-sanを
+入れていない人に渡す前に、SVGを埋め込んでください。方法は3つです。
+
+- **手で埋め込む**: SVGマーカーの設定で、ファイル欄の右の **…** から
+  **ファイルを埋め込み**（Embed File）を選ぶ
+- **Sの200個の埋め込みシンボルを使う**（次の節）: 最初から埋め込まれています
+- **保存のたびに自動で埋め込む**: インストールの1行の先頭に `EMBED=True;`
+  を付けて実行します。QGISが起動のたびに実行する `startup.py`
+  （QGISの設定フォルダ）に、印を付けた数行を追加します。`EMBED=False;`
+  で消えます。初期設定はオフです
 
 ## Sの200個を埋め込みシンボルで使う（インストール不要）
 
@@ -206,7 +209,7 @@ Google の Noto Emoji を、Pythonコンソールに1行貼るだけでインス
 import urllib.request as u; exec(u.urlopen('https://raw.githubusercontent.com/yfuru2454/emoji-san/v1.0.0/tests/check_install.py').read())
 ```
 
-- 期待される表示: `Result: ALL GOOD (10 passed, 0 failed, 0 skipped)`
+- 期待される表示: `Result: ALL GOOD` で始まる行
 - 絵文字8個を置いた「EmOji-san demo」レイヤも追加されます。
   不要なら先頭に `DEMO = False; ` を付けます
 

@@ -164,8 +164,10 @@ above, so use one or the other.
 
 - Emoji: [Google Noto Emoji](https://github.com/googlefonts/noto-emoji),
   Apache License 2.0. EmOji-san takes part of the SVG files, renames them
-  and sorts them into folders. The files themselves are unchanged. Details
-  are in `NOTICE`.
+  and sorts them into folders. Some files are rewritten, because QGIS would
+  draw them wrong as they are: the hands, for one, come out black. The
+  picture is the same, and the other files are unchanged. Details are in
+  `NOTICE`.
 - Scripts: MIT.
 - The lines above run code from this repository. The URLs point at a tag,
   which is a fixed version of the code. Read `install.py` first if you want
@@ -176,9 +178,12 @@ above, so use one or the other.
 Once a year, when Noto Emoji has the new emoji:
 
 1. `python3 build/update_from_upstream.py` fetches the SVG files and
-   rebuilds `index.csv` and the style file. It lists the emoji that are new
-   and those that are gone. To change the S set, edit `core_list.txt` and
-   run `python3 build/make_core.py`.
+   rebuilds `index.csv` and the style file. It needs picosvg
+   (`python3 -m pip install picosvg`). It lists the emoji that are new and
+   those that are gone. Look at the new ones in QGIS, not only in a browser:
+   QGIS draws SVG with Qt, which does not know everything a browser knows.
+   To change the S set, edit `core_list.txt` and run
+   `python3 build/make_core.py`.
 2. Change the version in `TAG` in `install.py` and everywhere in this
    README (search for the old number), and correct the numbers in the Sets
    table.
@@ -315,7 +320,7 @@ ZIP='/path/to/emoji-san-1.0.0.zip'; exec(open('/path/to/install.py', 'rb').read(
 
 ## ライセンス
 
-- 絵文字: [Google Noto Emoji](https://github.com/googlefonts/noto-emoji)、Apache License 2.0。EmOji-sanはSVGファイルの一部を選び、名前を変えてフォルダに分けています。ファイルの中身は変えていません。詳しくは`NOTICE`にあります。
+- 絵文字: [Google Noto Emoji](https://github.com/googlefonts/noto-emoji)、Apache License 2.0。EmOji-sanはSVGファイルの一部を選び、名前を変えてフォルダに分けています。そのままではQGISが正しく描けないファイル（手の絵文字は真っ黒になります）は、見た目を変えずに書き換えています。それ以外のファイルの中身は変えていません。詳しくは`NOTICE`にあります。
 - スクリプト: MIT。
 - 上の各行は、このリポジトリのコードを実行します。URLはタグ（固定した版）を指しています。何をするのか知りたいときは、先に`install.py`を読んでください。
 
@@ -323,7 +328,7 @@ ZIP='/path/to/emoji-san-1.0.0.zip'; exec(open('/path/to/install.py', 'rb').read(
 
 年に1回、Noto Emojiに新しい絵文字が入ったら:
 
-1. `python3 build/update_from_upstream.py`でSVGファイルを取得し、`index.csv`とスタイルファイルを作り直します。増えた絵文字と消えた絵文字が表示されます。Sのセットを変えるときは`core_list.txt`を編集して`python3 build/make_core.py`を実行します。
+1. `python3 build/update_from_upstream.py`でSVGファイルを取得し、`index.csv`とスタイルファイルを作り直します。picosvgが必要です（`python3 -m pip install picosvg`）。増えた絵文字と消えた絵文字が表示されます。増えた絵文字はブラウザだけでなくQGISでも見てください。QGISはQtでSVGを描くので、ブラウザと同じに描けないことがあります。Sのセットを変えるときは`core_list.txt`を編集して`python3 build/make_core.py`を実行します。
 2. `install.py`の`TAG`と、このREADMEにあるバージョン（古い番号で検索すると見つかります）をすべて書き換え、セットの表の個数を直します。
 3. `python3 tests/scenarios.py`は、空のQGIS設定フォルダで、インストール、セットの切り替え、埋め込み、アンインストールを通しで実行し、2の書き換え漏れも調べます。`qgis`をimportできるPythonが必要です。Dockerでの実行方法はファイルの先頭にあります。
 4. コミットしてタグを付け、プッシュしてから、スタイルファイルをリリースに添付します。

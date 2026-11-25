@@ -2,7 +2,8 @@
 """Maintainer tool: fetch the emoji from upstream and rebuild the payload.
 
 Run it about once a year, after Noto Emoji has added the new Unicode emoji.
-It needs git and network access, not QGIS.
+It needs git, network access and picosvg (python3 -m pip install picosvg),
+not QGIS.
 
     python3 build/update_from_upstream.py             noto-emoji main
     python3 build/update_from_upstream.py <commit>    that commit
@@ -12,7 +13,8 @@ What it does:
      name
   2. lists the SVG files of googlefonts/noto-emoji at the commit
   3. downloads each emoji both of them have, skin-tone variants left out,
-     to collections/noto_emoji_{map,people}/svg/<Category>/<name>.svg
+     to collections/noto_emoji_{map,people}/svg/<Category>/<name>.svg, and
+     rewrites the files that Qt would draw wrong (see for_qt below)
   4. rewrites UPSTREAM_COMMIT.txt and index.csv, and checks that upstream
      still puts the SVG files under the license in LICENSE-noto-emoji.txt
   5. runs make_core.py, which fills in the sets and builds the style file
@@ -35,6 +37,11 @@ import sys
 import tempfile
 import time
 import urllib.request
+
+try:
+    from picosvg.svg import SVG
+except ImportError:
+    sys.exit("ERROR: picosvg is missing. python3 -m pip install picosvg")
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "build"))
@@ -62,6 +69,22 @@ WINDOWS_RESERVED = {"con", "prn", "aux", "nul",
                     *(f"lpt{i}" for i in range(1, 10))}
 THREADS = 16
 
+# QGIS draws SVG markers with Qt's SVG renderer. That renderer has no clip
+# paths, does not follow xlink:href from one gradient to another and cannot
+# read rgba() colors. Noto's hands, for one, are a shape plus shading that
+# is clipped to the shape: Qt draws them as black hands with the shading
+# sticking out. Files with these constructs are rewritten; all the others
+# are kept byte for byte.
+QT_CANNOT = re.compile(r"<clipPath|Gradient[^>]*xlink:href")
+RGBA_STOP = re.compile(
+    r'stop-color="rgba\(\s*(\d+),\s*(\d+),\s*(\d+),\s*([0-9.]+)\s*\)"'
+    r' stop-opacity="([0-9.]+)"')
+# What Qt has trouble with. A file that still has one of these after the
+# rewrite is reported, for a look at how QGIS draws it.
+QT_DOUBTFUL = re.compile(
+    r"<clipPath|clip-path|Gradient[^>]*xlink:href|rgba\(|<mask|<filter"
+    r"|<pattern|<style|<use|<image|<text|<symbol|<switch|<foreignObject")
+
 
 def noto_name(emoji, keep_fe0f=False):
     """Noto's file name for an emoji, e.g. emoji_u1f3ea.svg."""
@@ -72,7 +95,7 @@ def noto_name(emoji, keep_fe0f=False):
 
 def file_name(description, used):
     """"hot beverage" -> "hot_beverage"; a repeated name gets _2, _3, ..."""
-    name = re.sub(r"[‘’“”\"']", "", description.lower())
+    name = re.sub(r"[\u2018\u2019\u201c\u201d\"']", "", description.lower())
     name = re.sub(r"[^a-z0-9]+", "_", name).strip("_") or "emoji"
     if name in WINDOWS_RESERVED:
         name += "_"
@@ -128,6 +151,36 @@ def build_rows(gemoji, noto):
     return rows
 
 
+def for_qt(svg, source):
+    """The SVG rewritten so that Qt draws it the way a browser does, or
+    None if it can stay as it is. `source` is Noto's file name."""
+    text = svg.decode("utf-8")
+    if not (QT_CANNOT.search(text) or "rgba(" in text):
+        return None
+
+    def stop(match):
+        # rgba(r, g, b, a) next to a stop-opacity: a browser multiplies both
+        red, green, blue = (int(match.group(i)) for i in (1, 2, 3))
+        alpha = float(match.group(4)) * float(match.group(5))
+        return 'stop-color="#%02x%02x%02x" stop-opacity="%s"' % (
+            red, green, blue, ("%.4f" % alpha).rstrip("0").rstrip("."))
+
+    text = RGBA_STOP.sub(stop, text)
+    if QT_CANNOT.search(text):
+        # picosvg is Google's tool for getting these SVGs ready for a font:
+        # it applies the clip paths to the shapes and resolves references
+        text = SVG.fromstring(text).topicosvg().tostring(pretty_print=True)
+    # Apache License 2.0, 4b: a changed file says that it was changed
+    note = ("<!-- Changed by EmOji-san from Noto Emoji's %s so that Qt can "
+            "draw it. See NOTICE. -->\n" % source)
+    if text.startswith("<?xml"):  # the XML declaration has to stay first
+        declaration, rest = text.split("?>", 1)
+        text = declaration + "?>\n" + note + rest.lstrip("\n")
+    else:
+        text = note + text
+    return text.encode("utf-8")
+
+
 def fetch(url, tries=3):
     for attempt in range(1, tries + 1):
         try:
@@ -180,6 +233,17 @@ def main(commit=None):
                  "new notice, then bring LICENSE-noto-emoji.txt, NOTICE, "
                  "metadata.ini and README.md in line with it.")
 
+    print("rewriting the files Qt would draw wrong ...")
+    rewritten = 0
+    for i, row in enumerate(rows):
+        changed = for_qt(blobs[i], row["noto_file"])
+        if changed:
+            blobs[i] = changed
+            rewritten += 1
+    print(f"  {rewritten} of {len(rows)}")
+    doubtful = [r["path"] for r, b in zip(rows, blobs)
+                if QT_DOUBTFUL.search(b.decode("utf-8"))]
+
     try:
         with open(ROOT / "index.csv", encoding="utf-8", newline="") as f:
             before = {r["path"] for r in csv.DictReader(f)}
@@ -202,6 +266,12 @@ def main(commit=None):
         for path in sorted(paths):
             print(f"  {path}")
     make_core.main()
+    if doubtful:
+        print(f"WARNING: {len(doubtful)} files use something Qt may draw "
+              "wrong. Look at them in QGIS, and extend for_qt if they are "
+              "broken:")
+        for path in doubtful:
+            print(f"  {path}")
     print("Done. Look at `git status`, then go on with \"Maintenance\" in "
           "README.md.")
 

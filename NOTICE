@@ -14,7 +14,14 @@ Emoji artwork
     country flags are not in that folder.
   - It renamed the files from code points (emoji_u1f3ea.svg) to names
     (convenience_store.svg) and sorted them into one folder per category.
-  - It did not change the content of any SVG file.
+  - It rewrote the files that Qt, which draws the markers in QGIS, gets
+    wrong: those with clip paths, with a gradient that refers to another
+    gradient, or with rgba() colors. picosvg
+    (https://github.com/googlefonts/picosvg) applies the clip paths to the
+    shapes and resolves the references; rgba() colors become a color and an
+    opacity. The picture stays the same. Each of these files says in a
+    comment at its top that it was changed.
+  - It did not change the content of the other SVG files.
 
 Names and categories
 

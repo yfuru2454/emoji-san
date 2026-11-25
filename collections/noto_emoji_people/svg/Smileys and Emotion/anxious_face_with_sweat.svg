@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- Changed by EmOji-san from Noto Emoji's emoji_u1f630.svg so that Qt can draw it. See NOTICE. -->
 <svg id="Geo" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 128 128">
   <defs>
     <radialGradient id="radial-gradient" cx="64.53" cy="64" fx="64.53" fy="64" r="56.96" gradientUnits="userSpaceOnUse">
@@ -8,12 +9,12 @@
     </radialGradient>
     <linearGradient id="linear-gradient" x1="64.53" y1="-1511.9" x2="64.53" y2="-1400.1" gradientTransform="translate(0 -1392) scale(1 -1)" gradientUnits="userSpaceOnUse">
       <stop offset=".56" stop-color="#40c0e7" stop-opacity="0"/>
-      <stop offset=".6" stop-color="rgba(68, 182, 234, .14)" stop-opacity=".14"/>
-      <stop offset=".68" stop-color="rgba(76, 164, 240, .4)" stop-opacity=".4"/>
-      <stop offset=".76" stop-color="rgba(82, 149, 245, .61)" stop-opacity=".61"/>
-      <stop offset=".84" stop-color="rgba(88, 137, 249, .78)" stop-opacity=".78"/>
-      <stop offset=".9" stop-color="rgba(91, 128, 252, .9)" stop-opacity=".9"/>
-      <stop offset=".96" stop-color="rgba(94, 123, 254, .97)" stop-opacity=".97"/>
+      <stop offset=".6" stop-color="#44b6ea" stop-opacity="0.0196"/>
+      <stop offset=".68" stop-color="#4ca4f0" stop-opacity="0.16"/>
+      <stop offset=".76" stop-color="#5295f5" stop-opacity="0.3721"/>
+      <stop offset=".84" stop-color="#5889f9" stop-opacity="0.6084"/>
+      <stop offset=".9" stop-color="#5b80fc" stop-opacity="0.81"/>
+      <stop offset=".96" stop-color="#5e7bfe" stop-opacity="0.9409"/>
       <stop offset="1" stop-color="#5f7aff"/>
     </linearGradient>
     <radialGradient id="radial-gradient-2" cx="21.52" cy="606.94" fx="21.52" fy="606.94" r="33.4" gradientTransform="translate(0 -870.65) scale(1 1.54)" gradientUnits="userSpaceOnUse">

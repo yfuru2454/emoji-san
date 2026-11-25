@@ -21,7 +21,7 @@ skin-tone variants.
 Full set (adds Smileys & Emotion, People & Body, 8 generic flags) —
 the QGIS console takes ONE line at a time, so join with a semicolon:
 
-    FULL = True; exec(<the same one-liner>)
+    FULL = True; import urllib.request as u; exec(...)  # same line
 
 Also installs index.csv next to the SVGs: one row per emoji with its
 codepoint, English name, a name in your QGIS language (Unicode CLDR,

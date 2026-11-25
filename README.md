@@ -19,7 +19,7 @@ sub-group per category.
 Open **Plugins → Python Console** and paste:
 
 ```python
-exec(__import__('urllib.request', fromlist=['']).urlopen('https://raw.githubusercontent.com/yfuru2454/emoji-san/v1.0.0/install.py').read().decode())
+import urllib.request as u; exec(u.urlopen('https://raw.githubusercontent.com/yfuru2454/emoji-san/v1.0.0/install.py').read())
 ```
 
 Then open any point layer's symbology → **SVG Marker → SVG Browser**
@@ -48,7 +48,7 @@ The installed folder also holds `index.csv`, one row per emoji:
 The `name_<lang>` column is added at install time in your QGIS's
 language, from Unicode CLDR (~100 languages; none for English). Scripts
 and AI assistants for QGIS can look emoji up here instead of guessing
-file names. Force a language with `LOCALE = 'de'; exec(...)`.
+file names. Force a language with `LOCALE = 'de'; import urllib.request as u; exec(...)`.
 
 ### Full set
 
@@ -58,7 +58,7 @@ line (adds Smileys & Emotion, People & Body, and the 8 generic flags —
 one line:
 
 ```python
-FULL = True; exec(__import__('urllib.request', fromlist=['']).urlopen('https://raw.githubusercontent.com/yfuru2454/emoji-san/v1.0.0/install.py').read().decode())
+FULL = True; import urllib.request as u; exec(u.urlopen('https://raw.githubusercontent.com/yfuru2454/emoji-san/v1.0.0/install.py').read())
 ```
 
 ### Prefer a GUI? (QGIS Resource Sharing)
@@ -84,7 +84,7 @@ Mapbox Maki icons / major OSM POI tags; see `build/make_core.py`.
 ### Uninstall
 
 ```python
-exec(__import__('urllib.request', fromlist=['']).urlopen('https://raw.githubusercontent.com/yfuru2454/emoji-san/v1.0.0/uninstall.py').read().decode())
+import urllib.request as u; exec(u.urlopen('https://raw.githubusercontent.com/yfuru2454/emoji-san/v1.0.0/uninstall.py').read())
 ```
 
 (or delete the `EmOji-san` folder next to the `profiles` folder in your
@@ -192,8 +192,8 @@ QGISでカラー絵文字をポイントシンボルとして使うための配�
 プラグイン不要、Pythonコンソールに1行貼るだけ。ダウンロードは1回
 （タグ付きアーカイブ約8MB）で済みます。
 
-**インストール**: プラグイン → Pythonコンソール に上の `exec(...)`
-ワンライナーを貼って Enter。シンボロジの SVGマーカー → SVGブラウザ に
+**インストール**: プラグイン → Pythonコンソール に上の
+`import urllib.request as u; exec(...)` のワンライナーを貼って Enter。シンボロジの SVGマーカー → SVGブラウザ に
 **EmOji-san** グループが現れ、その下にカテゴリ別のグループが並びます
 （インストール先は QGIS3 設定フォルダ直下の `EmOji-san` で、SVGパスに
 自動登録されます）。
@@ -210,7 +210,7 @@ QGISでカラー絵文字をポイントシンボルとして使うための配�
 - **スクリプトやAI向けの対応表** `index.csv` も一緒に入ります。絵文字・
   コードポイント・英語名・**QGISの表示言語での名前**（Unicode CLDR、
   約100言語）・カテゴリ・パスが1行ずつ並び、AIアシスタントがファイル名を
-  推測せずに絵文字を選べます。言語を指定するなら `LOCALE = 'de'; exec(...)`。
+  推測せずに絵文字を選べます。言語を指定するなら `LOCALE = 'de'; import urllib.request as u; exec(...)`。
 - GUI派には QGIS Resource Sharing プラグインからも導入できます
   （このリポジトリのURLをリポジトリとして追加）。
 - アンインストールは上記ワンライナー。手動なら QGIS3 設定フォルダの

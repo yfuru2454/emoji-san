@@ -95,8 +95,7 @@ if os.path.isfile(idx):
         rows = list(rd)
         cols = rd.fieldnames or []
 sets = sorted({r.get("set", "") for r in rows},
-              key=lambda x: ["basic", "advanced", "full"].index(x)
-              if x in ("basic", "advanced", "full") else 9)
+              key=lambda x: "SML".index(x) if x in ("S", "M", "L") else 9)
 installed = sets[-1] if sets else "?"
 if os.path.isdir(root):
     want_cats = sorted({r["path"].split("/")[0] for r in rows})

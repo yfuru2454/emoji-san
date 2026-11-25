@@ -6,14 +6,14 @@
 Paste into the QGIS Python console (Plugins > Python Console). Works on
 Windows / macOS / Linux with any QGIS 3.x. No plugin, no dependencies.
 
-Choose a set (the QGIS console takes ONE line, so join with ";"):
+Choose a size (the QGIS console takes ONE line, so join with ";"):
 
-    SET = 'basic';    import urllib.request as u; exec(...)   #   200
-    SET = 'advanced'; import urllib.request as u; exec(...)   # 1,109
-    SET = 'full';     import urllib.request as u; exec(...)   # 1,595
+    import urllib.request as u; exec(...)            # S:   200 (default)
+    SET='M'; import urllib.request as u; exec(...)   # M: 1,109
+    SET='L'; import urllib.request as u; exec(...)   # L: 1,595
 
-Without SET you get 'basic'. The sets nest (basic < advanced < full),
-so you can run it again with another SET at any time:
+The sets nest (S < M < L), so you can run it again with another SET at
+any time:
   - upgrade:   adds the missing emoji, keeps everything you have
   - downgrade: removes the emoji that are not in the smaller set
                (maps using those show a "?" marker until you upgrade)
@@ -38,13 +38,16 @@ TAG = "v1.0.0"
 SETTINGS_KEY = "svg/searchPathsForSVG"
 CLDR = ("https://raw.githubusercontent.com/unicode-org/cldr-json/49.0.0/"
         "cldr-json/")
-SETS = ["basic", "advanced", "full"]
-DEFAULT_SET = "basic"
+SETS = ["S", "M", "L"]
+DEFAULT_SET = "S"
+ALIASES = {"s": "S", "basic": "S", "lite": "S", "small": "S",
+           "m": "M", "advanced": "M", "map": "M", "medium": "M",
+           "l": "L", "full": "L", "large": "L"}
 
 # --- options (set as variables before exec'ing, if you like) ----------
 _g = globals()
-SET = str(_g.get("SET") or ("full" if _g.get("FULL") else DEFAULT_SET))
-SET = SET.strip().lower()
+SET = str(_g.get("SET") or ("L" if _g.get("FULL") else DEFAULT_SET))
+SET = ALIASES.get(SET.strip().lower(), SET.strip())
 LOCALE = _g.get("LOCALE", None)         # e.g. "de"; default: QGIS's own
 ZIP_URL = _g.get("ZIP_URL",             # override for testing/mirrors
                  "https://github.com/%s/archive/refs/tags/%s.zip"
@@ -168,8 +171,7 @@ def _write_index(root, rows):
 
 def main():
     if SET not in SETS:
-        print("EmOji-san: unknown SET %r — use one of: %s"
-              % (SET, ", ".join(SETS)))
+        print("EmOji-san: unknown SET %r — use 'S', 'M' or 'L'" % SET)
         return
     root, legacy = _paths()
     if os.path.isdir(legacy):  # early test installs put it inside svg/
@@ -244,8 +246,8 @@ def main():
           "a category (reopen the dialog if it was open).")
     bigger = SETS[rank + 1:]
     if bigger:
-        print("More emoji: put  SET = '%s';  in front of the same line "
-              "(%s)." % (bigger[0], " / ".join(bigger)))
+        print("More emoji: put  SET='%s';  in front of the same line "
+              "(S 200 / M 1,109 / L 1,595)." % bigger[0])
     try:
         from qgis.utils import iface
         if iface:

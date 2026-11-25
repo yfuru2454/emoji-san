@@ -14,10 +14,10 @@ same form QGIS stores in projects, e.g. "Food and Drink/hot_beverage.svg".
 `name` is the English CLDR short name (via gemoji). install.py adds a
 column with names in the user's own QGIS language at install time.
 `set` is the smallest install set holding the emoji; the sets nest, so
-basic < advanced < full and upgrading never removes an emoji:
-  basic    = the curated core in core_list.txt (also emoji_san_core.xml)
-  advanced = basic + the six map categories
-  full     = everything
+S < M < L and upgrading never removes an emoji:
+  S = the curated core in core_list.txt (also emoji_san_core.xml)
+  M = S + the six map categories
+  L = everything
 
 update_from_upstream.py runs this automatically at the end.
 """
@@ -85,8 +85,8 @@ def main() -> None:
             "collection": "map" if coll == "noto_emoji_map" else "people",
             "path": path,
             "noto_file": f"emoji_u{code}.svg",
-            "set": ("basic" if path in core else
-                    "advanced" if coll == "noto_emoji_map" else "full"),
+            "set": ("S" if path in core else
+                    "M" if coll == "noto_emoji_map" else "L"),
         })
     if missing:
         sys.exit(f"ERROR: {len(missing)} rows point at missing files, "

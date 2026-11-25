@@ -12,8 +12,10 @@ qgis/qgis Docker image:
 Run it before tagging a release. It zips the working tree, gives QGIS an
 empty settings folder (Qt's test location, ~/.qttest on Linux and macOS) and
 runs the scripts the way the Python console runs the one-line installer.
-Your own QGIS settings are not touched. Nothing is downloaded, so the name
-column from Unicode CLDR is not covered.
+Your own QGIS settings are not touched.
+
+Nothing is downloaded, unless you add --online: then it also fetches the
+emoji names of four languages from Unicode CLDR, the way install.py does.
 """
 import contextlib
 import csv
@@ -88,7 +90,7 @@ def main():
     app.initQgis()
     work = tempfile.mkdtemp(prefix="emoji-san-test-")
     try:
-        scenarios(settings, work)
+        scenarios(settings, work, "--online" in sys.argv)
     finally:
         QgsProject.instance().clear()
         app.exitQgis()
@@ -101,7 +103,7 @@ def main():
     return 1 if failures else 0
 
 
-def scenarios(settings, work):
+def scenarios(settings, work, online):
     root = os.path.join(settings, "EmOji-san")
     startup = os.path.join(settings, "startup.py")
     print("settings folder: %s" % settings)
@@ -149,6 +151,14 @@ def scenarios(settings, work):
     check(all((REPO / "collections" / ("noto_emoji_" + r["collection"])
                / "svg" / r["path"]).is_file() for r in index),
           "every emoji of index.csv has its SVG file")
+    # What Qt's SVG renderer gets wrong (black hands, black patches);
+    # build/update_from_upstream.py rewrites the files that have it.
+    qt_cannot = re.compile(r"<clipPath|Gradient[^>]*xlink:href|rgba\(")
+    wrong = [r["path"] for r in index if qt_cannot.search(
+        (REPO / "collections" / ("noto_emoji_" + r["collection"]) / "svg"
+         / r["path"]).read_text(encoding="utf-8"))]
+    check(not wrong, "no SVG file has clip paths, linked gradients or "
+          "rgba() colors, which QGIS draws wrong %s" % wrong[:5])
     notice = (REPO / "LICENSE-noto-emoji.txt").read_text(encoding="utf-8")
     check("Version 2.0, January 2004" in notice and "Google" in notice,
           "LICENSE-noto-emoji.txt is the Apache License 2.0 with Google's "
@@ -272,6 +282,19 @@ def scenarios(settings, work):
     with open(startup, encoding="utf-8") as f:
         check(f.read().startswith(BEGIN), "startup.py is created if needed")
 
+    if online:
+        print("\n7b. names from Unicode CLDR (downloads)")
+        for locale, column in (("ja", "name_ja"), ("es_MX", "name_es-MX"),
+                               ("nb", "name_no"), ("zh_TW", "name_zh-Hant")):
+            install(SET="L", LOCALE=locale)
+            with open(os.path.join(root, "index.csv"), encoding="utf-8",
+                      newline="") as f:
+                named = [r.get(column) for r in csv.DictReader(f)]
+            check(len(named) == len(want["L"]) and all(named),
+                  "LOCALE=%r gives every emoji a name in %s"
+                  % (locale, column))
+        install(SET="M", LOCALE="en")
+
     print("\n8. check_install.py and diagnose.py")
     style = QgsStyle.defaultStyle()
     style.importXml(str(REPO / "styles" / "emoji_san_core.xml"))
@@ -319,13 +342,18 @@ def scenarios(settings, work):
     os.makedirs(os.path.dirname(mine))
     shutil.copy(sample, mine)
     open(os.path.join(root, "Symbols", ".DS_Store"), "w").close()
+    cached = os.path.join(settings, "__pycache__", "startup.cpython-312.pyc")
+    os.makedirs(os.path.dirname(cached), exist_ok=True)
+    open(cached, "w").close()  # as left by QGIS running startup.py
     out, left = console("uninstall.py")
     check(svgs(root) == ["Mine/own.svg"] and "Kept 1 file" in out
           and os.listdir(root) == ["Mine"]
           and [os.path.normpath(p) for p in svg_paths()] == [root],
           "a file of the user's own stays, and the folder with it")
-    check(not os.path.exists(startup), "startup.py is gone (it held only "
-          "our lines)")
+    check(not os.path.exists(startup)
+          and not os.path.exists(os.path.dirname(cached)),
+          "startup.py is gone (it held only our lines), and Python's cache "
+          "of it")
     check("200 symbols tagged EmOji-san" in out, "the imported symbols are "
           "mentioned")
     check(not left, "nothing is left in the console's namespace %s" % left)

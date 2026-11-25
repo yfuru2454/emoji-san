@@ -64,8 +64,15 @@ def _emoji_san_uninstall():
             with open(startup + ".tmp", "w", encoding="utf-8") as f:
                 f.write(text + "\n")
             os.replace(startup + ".tmp", startup)
-        else:
-            os.remove(startup)  # nothing but our lines was in it
+        else:  # nothing but our lines was in it: the file can go, and
+            os.remove(startup)  # what Python cached of it
+            cache = os.path.join(os.path.dirname(startup), "__pycache__")
+            if os.path.isdir(cache):
+                for name in os.listdir(cache):
+                    if name.startswith("startup.") and name.endswith(".pyc"):
+                        os.remove(os.path.join(cache, name))
+                if not os.listdir(cache):
+                    os.rmdir(cache)
         print("EmOji-san lines removed from %s" % startup)
         done = True
 

@@ -140,11 +140,14 @@ def _emoji_san_check(ns):
                "none in index.csv: installed with LOCALE='en', or the names "
                "could not be downloaded (%s to retry)" % again)
     else:
-        filled = sum(1 for r in rows if r.get(local[0]))
-        report(filled > 0.9 * len(rows),
+        # Unicode CLDR does not have every emoji in every language
+        filled = [r for r in rows if r.get(local[0])]
+        report(bool(filled),
                "names in the QGIS language: column %s" % local[0],
-               "%d of %d filled, e.g. %s = %s" % (
-                   filled, len(rows), rows[0]["emoji"], rows[0][local[0]]))
+               "%d of %d filled%s" % (
+                   len(filled), len(rows), ", e.g. %s = %s" % (
+                       filled[0]["emoji"], filled[0][local[0]])
+                   if filled else ""))
 
     # --- one emoji, the way a project uses it -----------------------------
     sample = None

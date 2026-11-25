@@ -227,39 +227,52 @@ def _emoji_san_install(ns):
     # --- index.csv --------------------------------------------------------
     def local_names():
         """(code, {emoji: name}, problem) from Unicode CLDR, for the second
-        name column. English has none to add."""
+        name column. English has none to add.
+
+        A CLDR file holds only what differs from its parent locale: "es-MX"
+        has a fifth of the names, the rest are in "es-419" and "es". So the
+        names are read from the most general locale to the most specific.
+        """
         tag = str(language or ui).replace("_", "-")
         tag = tag.replace("@latin", "-Latn")
-        base = tag.split("-")[0].lower()
-        if base in ("en", "c", ""):
+        parts = tag.split("-")
+        if parts[0].lower() in ("en", "c", ""):
             return "en", {}, None
-        codes = [tag, base]
-        if base == "zh" and tag.lower().endswith(("-tw", "-hk", "-mo",
-                                                  "-hant")):
-            codes.insert(0, "zh-Hant")
-        if base == "nb":  # CLDR files Norwegian Bokmal under "no"
-            codes.append("no")
-        for code in dict.fromkeys(codes):
-            names = {}
-            try:
+        if parts[0].lower() == "zh" and parts[-1].upper() in ("TW", "HK",
+                                                              "MO"):
+            tag = "zh-Hant-" + parts[-1].upper()  # traditional characters
+
+        def fetch(path):
+            with urllib.request.urlopen(CLDR + path, timeout=30) as reply:
+                return json.loads(reply.read().decode("utf-8"))
+
+        names, found = {}, None
+        try:
+            parents = fetch("cldr-core/supplemental/parentLocales.json")[
+                "supplemental"]["parentLocales"]["parentLocale"]
+            chain = []  # "es-MX", "es-419", "es"
+            while tag and tag not in ("und", "root"):
+                chain.append(tag)
+                tag = parents.get(tag) or tag.rpartition("-")[0]
+            for code in reversed(chain):
                 for package, key in (("annotations", "annotations"),
                                      ("annotations-derived",
                                       "annotationsDerived")):
-                    url = "%scldr-%s-full/%s/%s/annotations.json" % (
-                        CLDR, package, key, code)
                     try:
-                        with urllib.request.urlopen(url, timeout=30) as reply:
-                            data = json.loads(reply.read().decode("utf-8"))
+                        data = fetch("cldr-%s-full/%s/%s/annotations.json"
+                                     % (package, key, code))
                     except urllib.error.HTTPError:
-                        break  # CLDR has no such locale: try the next code
+                        continue  # CLDR has no file for this locale
+                    found = code
                     for emoji, entry in data[key]["annotations"].items():
                         if entry.get("tts"):
                             names[emoji] = entry["tts"][0]
-            except Exception as ex:  # offline, timeout, ...
-                return base, {}, "%s: %s" % (type(ex).__name__, ex)
-            if names:
-                return code, names, None
-        return base, {}, "Unicode CLDR has no emoji names for %r" % tag
+        except Exception as ex:  # offline, timeout, ...
+            return parts[0], {}, "%s: %s" % (type(ex).__name__, ex)
+        if names:
+            return found, names, None
+        return parts[0], {}, ("Unicode CLDR has no emoji names for %r"
+                              % chain[0])
 
     code, names, problem = local_names()
     column = "name_" + code if names else None
@@ -336,8 +349,16 @@ def _emoji_san_install(ns):
                 with open(startup + ".tmp", "w", encoding="utf-8") as f:
                     f.write(new)
                 os.replace(startup + ".tmp", startup)
-            else:
-                os.remove(startup)  # nothing but our lines was in it
+            else:  # nothing but our lines was in it: the file can go,
+                os.remove(startup)  # and what Python cached of it
+                cache = os.path.join(os.path.dirname(startup), "__pycache__")
+                if os.path.isdir(cache):
+                    for name in os.listdir(cache):
+                        if name.startswith("startup.") \
+                                and name.endswith(".pyc"):
+                            os.remove(os.path.join(cache, name))
+                    if not os.listdir(cache):
+                        os.rmdir(cache)
         if os.path.isfile(hook):  # now, without restarting QGIS
             with open(hook, "rb") as f:
                 exec(compile(f.read(), hook, "exec"),

@@ -16,6 +16,7 @@ OSM POI tags (= symbols with cartographic precedent), plus Japanese map
 staples (hot springs, shrine, castle, Mt. Fuji...). Trim to taste.
 """
 import base64
+import csv
 import html
 import pathlib
 from xml.sax.saxutils import escape
@@ -276,10 +277,17 @@ def main():
         "".join(f"{s}\t{c}\n" for s, c, _ in CORE), encoding="utf-8")
 
     # 2) style XML
+    # Symbol names are "<emoji> <slug>" (e.g. "✈️ airplane"): generic names
+    # like "airplane" or "bank" would collide with (and on import, offer to
+    # overwrite) symbols already in the user's style library. The slug part
+    # stays identical to the SVG file name.
+    with open(ROOT / "index.csv", encoding="utf-8") as f:
+        emoji_of = {r["path"]: r["emoji"] for r in csv.DictReader(f)}
     syms = []
     for slug, cat, _ in CORE:
         b64 = base64.b64encode(svg_path(slug, cat).read_bytes()).decode()
-        syms.append(make_symbol_xml(slug, f"EmOji-san,Noto Emoji,{cat}", b64))
+        name = f"{emoji_of[f'{cat}/{slug}.svg']} {slug}"
+        syms.append(make_symbol_xml(name, f"EmOji-san,Noto Emoji,{cat}", b64))
     xml = ('<!DOCTYPE qgis_style>\n<qgis_style version="2">\n<symbols>\n'
            + "\n".join(syms) + "\n</symbols>\n<colorramps/>\n</qgis_style>\n")
     out = ROOT / "styles" / "emoji_san_core.xml"

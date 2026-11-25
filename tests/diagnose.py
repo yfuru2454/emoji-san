@@ -68,7 +68,7 @@ def _emoji_san_diagnose(ns):
         """Windows file attributes that mean the content is elsewhere."""
         import ctypes
         attributes = ctypes.windll.kernel32.GetFileAttributesW(path)
-        if attributes == 0xFFFFFFFF:
+        if attributes in (-1, 0xFFFFFFFF):  # INVALID_FILE_ATTRIBUTES
             return []
         return [name for bit, name in (
             (0x400, "REPARSE_POINT"),
@@ -310,6 +310,7 @@ def _emoji_san_diagnose(ns):
     out("")
     out("=" * 60)
     out("Finished in %.1f s." % (clock() - started))
+    causes = list(dict.fromkeys(causes))  # each one once
     if causes:
         out("LIKELY CAUSES:")
         for number, cause in enumerate(causes, 1):

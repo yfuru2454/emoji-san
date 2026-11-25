@@ -80,7 +80,9 @@ RGBA_STOP = re.compile(
     r'stop-color="rgba\(\s*(\d+),\s*(\d+),\s*(\d+),\s*([0-9.]+)\s*\)"'
     r' stop-opacity="([0-9.]+)"')
 # What Qt has trouble with. A file that still has one of these after the
-# rewrite is reported, for a look at how QGIS draws it.
+# rewrite is reported, for a look at how QGIS draws it. Not on the list:
+# mix-blend-mode, which Qt ignores. Three faces shade a cheek or a tongue
+# with it and come out a little lighter in QGIS than in a browser.
 QT_DOUBTFUL = re.compile(
     r"<clipPath|clip-path|Gradient[^>]*xlink:href|rgba\(|<mask|<filter"
     r"|<pattern|<style|<use|<image|<text|<symbol|<switch|<foreignObject")
@@ -154,7 +156,7 @@ def build_rows(gemoji, noto):
 def for_qt(svg, source):
     """The SVG rewritten so that Qt draws it the way a browser does, or
     None if it can stay as it is. `source` is Noto's file name."""
-    text = svg.decode("utf-8")
+    original = text = svg.decode("utf-8")
     if not (QT_CANNOT.search(text) or "rgba(" in text):
         return None
 
@@ -170,6 +172,8 @@ def for_qt(svg, source):
         # picosvg is Google's tool for getting these SVGs ready for a font:
         # it applies the clip paths to the shapes and resolves references
         text = SVG.fromstring(text).topicosvg().tostring(pretty_print=True)
+    if text == original:  # an rgba() of a kind this does not rewrite
+        return None
     # Apache License 2.0, 4b: a changed file says that it was changed
     note = ("<!-- Changed by EmOji-san from Noto Emoji's %s so that Qt can "
             "draw it. See NOTICE. -->\n" % source)

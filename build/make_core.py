@@ -152,7 +152,8 @@ def main():
            "     https://github.com/googlefonts/noto-emoji (commit "
            f"{commit[:12]}).\n"
            "     The SVG files are embedded as the repository has them; its\n"
-           "     NOTICE says which of Noto's files were changed, and how. -->\n"
+           "     NOTICE says which of Noto's files were changed, and how. "
+           "-->\n"
            '<qgis_style version="2">\n<symbols>\n'
            + "\n".join(symbols)
            + "\n</symbols>\n<colorramps/>\n</qgis_style>\n")

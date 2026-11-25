@@ -7,12 +7,17 @@ Rebuilds the same gemoji x noto-emoji mapping that update_from_upstream.py
 used (at the commit in UPSTREAM_COMMIT.txt), checks that every file it
 names exists under collections/, and writes index.csv:
 
-    emoji, codepoint, name, category, collection, path, noto_file
+    emoji, codepoint, name, category, collection, path, noto_file, set
 
 `path` is relative to the installed EmOji-san folder (= the SVG path), the
 same form QGIS stores in projects, e.g. "Food and Drink/hot_beverage.svg".
 `name` is the English CLDR short name (via gemoji). install.py adds a
 column with names in the user's own QGIS language at install time.
+`set` is the smallest install set holding the emoji; the sets nest, so
+basic < advanced < full and upgrading never removes an emoji:
+  basic    = the curated core in core_list.txt (also emoji_san_core.xml)
+  advanced = basic + the six map categories
+  full     = everything
 
 update_from_upstream.py runs this automatically at the end.
 """
@@ -44,6 +49,14 @@ def main() -> None:
             check=True, capture_output=True, text=True).stdout.split()
     noto = {f for f in files if f.endswith(".svg")}
 
+    core = set()
+    core_file = ROOT / "core_list.txt"
+    if core_file.exists():
+        for line in core_file.read_text(encoding="utf-8").splitlines():
+            if line.strip():
+                slug, folder = line.split("\t")
+                core.add(f"{folder}/{slug}.svg")
+
     cat_to_coll = {c: k for k, cats in COLLECTIONS.items() for c in cats}
     used, rows, missing = {}, [], []
     for e in gemoji:
@@ -72,17 +85,24 @@ def main() -> None:
             "collection": "map" if coll == "noto_emoji_map" else "people",
             "path": path,
             "noto_file": f"emoji_u{code}.svg",
+            "set": ("basic" if path in core else
+                    "advanced" if coll == "noto_emoji_map" else "full"),
         })
     if missing:
         sys.exit(f"ERROR: {len(missing)} rows point at missing files, "
                  f"e.g. {missing[:3]} — rerun update_from_upstream.py")
+
+    unknown = core - {r["path"] for r in rows}
+    if unknown:
+        sys.exit(f"ERROR: core_list.txt names unknown files: {sorted(unknown)[:3]}")
 
     out = ROOT / "index.csv"
     with open(out, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=list(rows[0]))
         w.writeheader()
         w.writerows(rows)
-    print(f"wrote {out} ({len(rows)} rows)")
+    from collections import Counter
+    print(f"wrote {out} ({len(rows)} rows)", dict(Counter(r["set"] for r in rows)))
 
 
 if __name__ == "__main__":

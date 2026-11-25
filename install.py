@@ -3,30 +3,25 @@
 
 (Yes, there is an Oji-san hiding in the name.)
 
-Paste into the QGIS Python console (Plugins > Python Console), or run
-via the one-liner in README.md. No plugin, no dependencies, works on
-Windows / macOS / Linux with any QGIS 3.x.
+Paste into the QGIS Python console (Plugins > Python Console). Works on
+Windows / macOS / Linux with any QGIS 3.x. No plugin, no dependencies.
 
-One HTTP request: downloads this repository's tagged archive (a few MB),
-extracts the emoji SVGs into <QGIS3 settings folder>/EmOji-san/<Category>/
-and registers that folder as an SVG path (Settings > Options > System >
-SVG paths). The SVG browser then shows an "EmOji-san" group with one
-sub-group per category, loading one category at a time.
+Choose a set (the QGIS console takes ONE line, so join with ";"):
 
-Default: ~1,060 map-friendly emoji (Animals & Nature, Food & Drink,
-Travel & Places, Activities, Objects, Symbols) — the standard set you
-know from iPhone/Android keyboards, in Google's Noto design, without
-skin-tone variants.
+    SET = 'basic';    import urllib.request as u; exec(...)   #   200
+    SET = 'advanced'; import urllib.request as u; exec(...)   # 1,109
+    SET = 'full';     import urllib.request as u; exec(...)   # 1,595
 
-Full set (adds Smileys & Emotion, People & Body, 8 generic flags) —
-the QGIS console takes ONE line at a time, so join with a semicolon:
+Without SET you get 'basic'. The sets nest (basic < advanced < full),
+so you can run it again with another SET at any time:
+  - upgrade:   adds the missing emoji, keeps everything you have
+  - downgrade: removes the emoji that are not in the smaller set
+               (maps using those show a "?" marker until you upgrade)
 
-    FULL = True; import urllib.request as u; exec(...)  # same line
-
-Also installs index.csv next to the SVGs: one row per emoji with its
-codepoint, English name, a name in your QGIS language (Unicode CLDR,
-~100 languages), category and path. Scripts and AI agents (e.g. QGIS
-assistants) can look an emoji up there instead of guessing file names.
+Files go to <QGIS3 settings folder>/EmOji-san/<Category>/, which is
+registered as an SVG path (Settings > Options > System > SVG paths).
+index.csv lists every installed emoji with its codepoint, English name,
+a name in your QGIS language (Unicode CLDR), category, path and set.
 
 License of the artwork: Apache-2.0 (a copy is installed alongside).
 """
@@ -43,19 +38,21 @@ TAG = "v1.0.0"
 SETTINGS_KEY = "svg/searchPathsForSVG"
 CLDR = ("https://raw.githubusercontent.com/unicode-org/cldr-json/49.0.0/"
         "cldr-json/")
+SETS = ["basic", "advanced", "full"]
+DEFAULT_SET = "basic"
 
 # --- options (set as variables before exec'ing, if you like) ----------
 _g = globals()
-FULL = bool(_g.get("FULL", False))      # FULL=True -> people/faces too
+SET = str(_g.get("SET") or ("full" if _g.get("FULL") else DEFAULT_SET))
+SET = SET.strip().lower()
 LOCALE = _g.get("LOCALE", None)         # e.g. "de"; default: QGIS's own
 ZIP_URL = _g.get("ZIP_URL",             # override for testing/mirrors
                  "https://github.com/%s/archive/refs/tags/%s.zip"
                  % (REPO, TAG))
 # ----------------------------------------------------------------------
 
-MARKERS = ["/collections/noto_emoji_map/svg/"]
-if FULL:
-    MARKERS.append("/collections/noto_emoji_people/svg/")
+SVG_DIRS = ("/collections/noto_emoji_map/svg/",
+            "/collections/noto_emoji_people/svg/")
 
 
 def _paths():
@@ -87,8 +84,7 @@ def _register(root):
     if isinstance(cur, str):
         cur = [cur] if cur else []
     cur = [p for p in (cur or []) if p]
-    norm = [os.path.normpath(p) for p in cur]
-    if os.path.normpath(root) in norm:
+    if os.path.normpath(root) in [os.path.normpath(p) for p in cur]:
         return False
     s.setValue(SETTINGS_KEY, cur + [root])
     return True
@@ -112,7 +108,7 @@ def _qgis_locale():
 
 
 def _cldr_names(loc):
-    """{emoji: name} in the given locale from Unicode CLDR, or {}."""
+    """(code, {emoji: name}) in the given locale from Unicode CLDR."""
     loc = loc.replace("_", "-")
     lang = loc.split("-")[0].lower()
     if lang == "en":
@@ -139,20 +135,18 @@ def _cldr_names(loc):
     return lang, {}
 
 
-def _write_index(root, index_bytes):
-    """index.csv for the files actually installed, + local-language names."""
-    rows = list(csv.DictReader(io.StringIO(index_bytes.decode("utf-8"))))
-    rows = [r for r in rows
-            if os.path.exists(os.path.join(root, *r["path"].split("/")))]
+def _write_index(root, rows):
+    """index.csv for the installed emoji, + local-language names."""
     code, names = _cldr_names(_qgis_locale())
     fields = ["emoji", "codepoint", "name"]
+    col = None
     if names:
         col = "name_" + code
         fields.append(col)
         for r in rows:
             e = r["emoji"]
             r[col] = names.get(e) or names.get(e.replace("️", "")) or ""
-    fields += ["category", "path", "noto_file"]
+    fields += ["category", "path", "set", "noto_file"]
     with open(os.path.join(root, "index.csv"), "w", newline="",
               encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=fields, extrasaction="ignore")
@@ -161,64 +155,97 @@ def _write_index(root, index_bytes):
     with open(os.path.join(root, "README.txt"), "w", encoding="utf-8") as f:
         f.write(
             "EmOji-san: Google Noto Emoji (Apache-2.0) as QGIS SVG markers.\n"
-            "This folder is registered as a QGIS SVG path. index.csv lists\n"
-            "every emoji: 'path' is relative to this folder, the same form\n"
-            "QGIS stores in projects (e.g. 'Food and Drink/hot_beverage.svg')."
-            "\n%s\nhttps://github.com/%s\n" % (
+            "Installed set: %s (%d emoji). This folder is registered as a\n"
+            "QGIS SVG path. index.csv lists every installed emoji: 'path'\n"
+            "is relative to this folder, the same form QGIS stores in\n"
+            "projects (e.g. 'Food and Drink/hot_beverage.svg').\n%s"
+            "https://github.com/%s\n" % (
+                SET, len(rows),
                 ("'%s' holds names in this QGIS's language (Unicode CLDR)."
-                 % ("name_" + code)) if names else "", REPO))
-    return len(rows), ("name_" + code) if names else None
+                 "\n" % col) if col else "", REPO))
+    return col
 
 
 def main():
+    if SET not in SETS:
+        print("EmOji-san: unknown SET %r — use one of: %s"
+              % (SET, ", ".join(SETS)))
+        return
     root, legacy = _paths()
-    if os.path.isdir(legacy):  # v0 test installs put it inside svg/
+    if os.path.isdir(legacy):  # early test installs put it inside svg/
         shutil.rmtree(legacy)
         print("  removed old location:", legacy)
 
     print("EmOji-san — downloading %s ..." % ZIP_URL)
     data = urllib.request.urlopen(ZIP_URL, timeout=120).read()
-    print("  %.1f MB, extracting ..." % (len(data) / 1e6))
+    z = zipfile.ZipFile(io.BytesIO(data))
 
-    n, index_bytes = 0, None
-    with zipfile.ZipFile(io.BytesIO(data)) as z:
-        for info in z.infolist():
-            name = info.filename.replace("\\", "/")
-            if info.is_dir() or ".." in name:
-                continue
-            if name.count("/") == 1 and name.endswith("/index.csv"):
-                index_bytes = z.read(info)  # top-level index.csv
-                continue
-            if name.endswith("/LICENSE-noto-emoji.txt") or \
-                    name.endswith("/UPSTREAM_COMMIT.txt"):
-                rel = os.path.basename(name)
-            else:
-                for m in MARKERS:
-                    if m in name and name.endswith(".svg"):
-                        rel = name.split(m, 1)[1]
-                        break
-                else:
-                    continue
-            dest = os.path.join(root, *rel.split("/"))
-            os.makedirs(os.path.dirname(dest), exist_ok=True)
-            with open(dest, "wb") as f:
-                f.write(z.read(info))
-            n += 1
+    # which emoji belong to the chosen set (sets nest: basic < adv < full)
+    names = z.namelist()
+    index_name = next(n for n in names
+                      if n.count("/") == 1 and n.endswith("/index.csv"))
+    rows = list(csv.DictReader(
+        io.StringIO(z.read(index_name).decode("utf-8"))))
+    rank = SETS.index(SET)
+    rows = [r for r in rows if SETS.index(r["set"]) <= rank]
+    want = {r["path"] for r in rows}
 
-    added = _register(root)
-    msg = "EmOji-san: %d files installed -> %s" % (n, root)
+    # zip members by their path relative to the install root
+    members = {}
+    for n in names:
+        for d in SVG_DIRS:
+            if d in n and n.endswith(".svg") and ".." not in n:
+                members[n.split(d, 1)[1]] = n
+    for n in names:
+        if n.count("/") == 1 and n.endswith(("/LICENSE-noto-emoji.txt",
+                                             "/UPSTREAM_COMMIT.txt")):
+            members[os.path.basename(n)] = n
+
+    # add what is missing (and refresh what is there)
+    added = 0
+    for rel in sorted(want) + ["LICENSE-noto-emoji.txt",
+                               "UPSTREAM_COMMIT.txt"]:
+        dest = os.path.join(root, *rel.split("/"))
+        if rel not in members:
+            continue
+        existed = os.path.exists(dest)
+        os.makedirs(os.path.dirname(dest), exist_ok=True)
+        with open(dest, "wb") as f:
+            f.write(z.read(members[rel]))
+        added += 0 if existed or not rel.endswith(".svg") else 1
+
+    # remove SVGs that are not in the chosen set (downgrade), then
+    # empty category folders. Only .svg files inside our own folder.
+    removed = 0
+    for dp, dn, fn in os.walk(root, topdown=False):
+        for f in fn:
+            if not f.endswith(".svg"):
+                continue
+            rel = os.path.relpath(os.path.join(dp, f), root).replace(
+                os.sep, "/")
+            if rel not in want:
+                os.remove(os.path.join(dp, f))
+                removed += 1
+        if dp != root and not os.listdir(dp):
+            os.rmdir(dp)
+
+    col = _write_index(root, rows)
+    newly = _register(root)
+    msg = "EmOji-san %s: %d emoji (+%d added, -%d removed) -> %s" % (
+        SET, len(rows), added, removed, root)
     print(msg)
-    if index_bytes:
-        rows, col = _write_index(root, index_bytes)
-        print("  index.csv: %d emoji%s" % (
-            rows, (" (+ %s)" % col) if col else ""))
-    if added:
+    print("  index.csv%s" % ((" (+ %s)" % col) if col else ""))
+    if newly:
         print("  registered as an SVG path (Settings > Options > System)")
-    print("Use: layer symbology > Marker > SVG Marker > SVG Browser > "
-          "'EmOji-san' group (reopen the dialog if it was open).")
-    if not FULL:
-        print("Want faces & people too? Paste:  FULL = True; "
-              "<the same one-liner>")
+    if removed:
+        print("  note: maps that used the removed emoji show '?' until you "
+              "install a larger set again")
+    print("Use: layer symbology > SVG Marker > SVG browser > EmOji-san > "
+          "a category (reopen the dialog if it was open).")
+    bigger = SETS[rank + 1:]
+    if bigger:
+        print("More emoji: put  SET = '%s';  in front of the same line "
+              "(%s)." % (bigger[0], " / ".join(bigger)))
     try:
         from qgis.utils import iface
         if iface:

@@ -41,8 +41,6 @@ except (ImportError, AttributeError):  # QGIS 4 (Qt6)
 
 DEMO = bool(globals().get("DEMO", True))
 SAMPLE = "Travel and Places/convenience_store.svg"
-CATEGORIES = ["Activities", "Animals and Nature", "Food and Drink",
-              "Objects", "Symbols", "Travel and Places"]
 
 results = []
 
@@ -89,14 +87,27 @@ profile = os.path.normpath(QgsApplication.qgisSettingsDirPath())
 root = os.path.join(os.path.dirname(os.path.dirname(profile)), "EmOji-san")
 
 # 1. folder, categories, files -------------------------------------------
+idx = os.path.join(root, "index.csv")
+rows, cols = [], []
+if os.path.isfile(idx):
+    with open(idx, encoding="utf-8") as f:
+        rd = csv.DictReader(f)
+        rows = list(rd)
+        cols = rd.fieldnames or []
+sets = sorted({r.get("set", "") for r in rows},
+              key=lambda x: ["basic", "advanced", "full"].index(x)
+              if x in ("basic", "advanced", "full") else 9)
+installed = sets[-1] if sets else "?"
 if os.path.isdir(root):
-    cats = [c for c in CATEGORIES if os.path.isdir(os.path.join(root, c))]
+    want_cats = sorted({r["path"].split("/")[0] for r in rows})
+    cats = [c for c in want_cats if os.path.isdir(os.path.join(root, c))]
     svgs = sum(len([f for f in fs if f.endswith(".svg")])
                for _, _, fs in os.walk(root))
-    report(len(cats) == len(CATEGORIES) and svgs >= 1000,
-           "folder: %d/%d categories, %d SVGs" % (len(cats),
-                                                  len(CATEGORIES), svgs),
-           root)
+    report(bool(rows) and len(cats) == len(want_cats) and svgs == len(rows),
+           "folder: set '%s', %d SVGs in %d categories" % (
+               installed, svgs, len(cats)),
+           root if svgs == len(rows) else
+           "index.csv lists %d -> run install.py again" % len(rows))
 else:
     svgs = 0
     report(False, "folder exists", "not found: " + root)
@@ -120,15 +131,10 @@ report(in_settings and in_qgis, "registered as an SVG path",
            "under Settings > Options > System > SVG paths)"))
 
 # 3. index.csv -----------------------------------------------------------
-idx = os.path.join(root, "index.csv")
-if os.path.isfile(idx):
-    with open(idx, encoding="utf-8") as f:
-        rd = csv.DictReader(f)
-        rows = list(rd)
-        cols = rd.fieldnames or []
+if rows:
     bad = [r["path"] for r in rows
            if not os.path.isfile(os.path.join(root, *r["path"].split("/")))]
-    report(not bad and len(rows) >= 1000,
+    report(not bad and len(rows) >= 200,
            "index.csv: %d rows, all paths exist" % len(rows),
            ("missing e.g. %s" % bad[:3]) if bad else "")
     local = [c for c in cols if c.startswith("name_")]

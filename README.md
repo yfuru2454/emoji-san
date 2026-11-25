@@ -17,8 +17,8 @@ Google Noto Emoji, installed with one line in the Python console.
 3. You should see:
 
    ```
-   EmOji-san: 1060 files installed -> .../QGIS3/EmOji-san
-     index.csv: 1058 emoji (+ name_ja)
+   EmOji-san basic: 200 emoji (+200 added, -0 removed) -> .../QGIS3/EmOji-san
+     index.csv (+ name_ja)
      registered as an SVG path (Settings > Options > System)
    ```
 
@@ -26,17 +26,24 @@ Google Noto Emoji, installed with one line in the Python console.
    **SVG Marker**, and pick a category under **EmOji-san** in the
    SVG browser.
 
-## Options
+## Choose a set
 
-Put the option in front of the same line, separated by `;`.
-The console only accepts one line at a time.
+| Set | Emoji | What |
+|---|---|---|
+| `basic` (default) | 200 | Hand-picked, easy to read at marker size |
+| `advanced` | 1,109 | basic + all of Activities, Animals and Nature, Food and Drink, Objects, Symbols, Travel and Places |
+| `full` | 1,595 | advanced + all faces, people and 8 generic flags |
 
-- All emoji including faces and people (1,595):
-  `FULL = True; import urllib.request as u; exec(...)`
-- Names in another language in `index.csv`:
-  `LOCALE = 'de'; import urllib.request as u; exec(...)`
+- Put `SET = '...';` in front of the same line. The console only
+  accepts one line, so keep it on one line:
+  `SET = 'advanced'; import urllib.request as u; exec(...)`
+- Run it again with another set at any time:
+  - Upgrade (e.g. basic → advanced): adds emoji, removes nothing.
+  - Downgrade (e.g. full → basic): removes the emoji that are not in the
+    smaller set. Maps using them show `?` until you upgrade again.
+- Names in another language in `index.csv`: `LOCALE = 'de';` in front.
 
-## 200 core symbols (no install needed)
+## The basic 200 as embedded symbols (no install needed)
 
 - Download `emoji_san_core.xml` from [Releases](../../releases).
 - **Settings → Style Manager → Import/Export → Import Items**,
@@ -74,15 +81,14 @@ import urllib.request as u; exec(u.urlopen('https://raw.githubusercontent.com/yf
 
 ## What you get
 
-- 1,058 emoji in 6 categories: Activities, Animals and Nature,
-  Food and Drink, Objects, Symbols, Travel and Places.
-- `FULL = True` adds Smileys and Emotion, People and Body, and 8
-  generic flags.
-- No skin-tone variants and no country flags.
+- Three nested sets: basic (200) < advanced (1,109) < full (1,595).
+- No skin-tone variants and no country flags (Noto has 3,750 SVGs in
+  total; most of the rest are skin-tone variants).
 - English file names (`convenience_store.svg`), so the SVG browser's
   search box finds them by name.
-- `index.csv`: one row per emoji (emoji, codepoint, name, name in your
-  QGIS language, category, path), for scripts and AI assistants.
+- `index.csv`: one row per installed emoji (emoji, codepoint, name, name
+  in your QGIS language, category, path, set), for scripts and AI
+  assistants.
 - Also usable as a [QGIS Resource Sharing](https://plugins.qgis.org/plugins/qgis_resource_sharing/)
   repository.
 
@@ -126,25 +132,32 @@ Google の Noto Emoji を、Pythonコンソールに1行貼るだけでインス
 3. 次のように表示されれば成功
 
    ```
-   EmOji-san: 1060 files installed -> .../QGIS3/EmOji-san
-     index.csv: 1058 emoji (+ name_ja)
+   EmOji-san basic: 200 emoji (+200 added, -0 removed) -> .../QGIS3/EmOji-san
+     index.csv (+ name_ja)
      registered as an SVG path (Settings > Options > System)
    ```
 
 4. ポイントレイヤの **シンボロジ** で、シンボルレイヤの種類を
    **SVGマーカー** にし、SVGブラウザの **EmOji-san** の下のカテゴリを選ぶ
 
-## オプション
+## セットを選ぶ
 
-同じ1行の先頭に `;` で区切って付けます。
-コンソールは1行ずつしか受け付けないので、1行のまま貼ってください。
+| セット | 個数 | 中身 |
+|---|---|---|
+| `basic`（初期設定） | 200 | マーカーの大きさでも見やすいものを厳選 |
+| `advanced` | 1,109 | basic ＋ Activities、Animals and Nature、Food and Drink、Objects、Symbols、Travel and Places の全部 |
+| `full` | 1,595 | advanced ＋ 顔・人物の全部と汎用の旗8個 |
 
-- 顔・人物も含めた全部（1,595個）:
-  `FULL = True; import urllib.request as u; exec(...)`
-- `index.csv` の名前を別の言語にする:
-  `LOCALE = 'de'; import urllib.request as u; exec(...)`
+- 同じ1行の先頭に `SET = '...';` を付けます。コンソールは1行しか
+  受け付けないので、1行のまま貼ってください:
+  `SET = 'advanced'; import urllib.request as u; exec(...)`
+- 別のセットでいつでも実行し直せます:
+  - アップグレード（例: basic → advanced）: 絵文字を追加するだけで、何も消しません
+  - ダウングレード（例: full → basic）: 小さいセットにない絵文字を削除します。
+    それを使っている地図は、アップグレードし直すまで `?` で表示されます
+- `index.csv` の名前を別の言語にする: 先頭に `LOCALE = 'de';`
 
-## コア200個（インストール不要）
+## basicの200個を埋め込みシンボルで使う（インストール不要）
 
 - [Releases](../../releases) から `emoji_san_core.xml` をダウンロード
 - **設定 → スタイルマネージャ → インポート/エクスポート → アイテムのインポート**
@@ -182,15 +195,14 @@ import urllib.request as u; exec(u.urlopen('https://raw.githubusercontent.com/yf
 
 ## 入っているもの
 
-- 6カテゴリ1,058個: Activities, Animals and Nature, Food and Drink,
-  Objects, Symbols, Travel and Places
-- `FULL = True` で、顔（Smileys and Emotion）、人物（People and Body）、
-  汎用の旗8個を追加
-- 肌の色違いと国旗は含みません
+- 入れ子の3セット: basic（200）< advanced（1,109）< full（1,595）
+- 肌の色違いと国旗は含みません（Notoの元データは3,750個で、残りの大半は
+  肌の色違いです）
 - ファイル名は英語（`convenience_store.svg`）なので、SVGブラウザの検索欄で
   名前から探せます
-- `index.csv`: 絵文字ごとに1行（絵文字、コードポイント、英語名、
-  QGISの表示言語での名前、カテゴリ、パス）。スクリプトやAIアシスタント向け
+- `index.csv`: インストールした絵文字ごとに1行（絵文字、コードポイント、
+  英語名、QGISの表示言語での名前、カテゴリ、パス、セット）。
+  スクリプトやAIアシスタント向け
 - [QGIS Resource Sharing](https://plugins.qgis.org/plugins/qgis_resource_sharing/)
   のリポジトリとしても使えます
 

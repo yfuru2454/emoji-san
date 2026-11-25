@@ -10,7 +10,8 @@
 #   - index.csv has names in the language of this QGIS (not for English)
 #   - a path as projects store it ("Category/name.svg") leads to the file
 #   - QGIS draws an emoji, not the "?" it draws for a missing SVG
-#   - symbols imported from emoji_san_core.xml all draw
+#   - symbols imported from emoji_san_core.xml all draw (and whether they
+#     are the drawings of the installed files)
 #   - embedding on save, if it is switched on, really embeds
 # Then it adds a layer "EmOji-san demo" with 8 emoji around the centre of
 # the map. DEMO=False; in front of the command leaves that out.
@@ -19,6 +20,7 @@
 
 
 def _emoji_san_check(ns):
+    import base64
     import builtins
     import csv
     import math
@@ -179,12 +181,37 @@ def _emoji_san_check(ns):
         report(None, "symbols from emoji_san_core.xml", "not imported")
     else:
         broken = [n for n in names if not draws(style.symbol(n))]
-        report(not broken,
-               "symbols from emoji_san_core.xml: %d, all draw" % len(names)
-               if not broken else "symbols from emoji_san_core.xml",
-               "e.g. %s" % names[0] if not broken else
-               "%d of %d do not draw, e.g. %s; import the file again" % (
-                   len(broken), len(names), ", ".join(broken[:3])))
+        # A symbol is named "<emoji> <file name>" and carries its SVG. If
+        # that is not the installed file, the symbol is from the style file
+        # of another release.
+        installed = {r["emoji"]: file_of(r) for r in present}
+        other = 0
+        for n in names:
+            layer = style.symbol(n).symbolLayer(0)
+            inside = layer.path() if hasattr(layer, "path") else ""
+            if n.split(" ")[0] in installed and inside.startswith("base64:"):
+                with open(installed[n.split(" ")[0]], "rb") as f:
+                    try:
+                        other += base64.b64decode(inside[7:]) != f.read()
+                    except ValueError:
+                        other += 1
+        # importing over symbols of the same name lasts only until QGIS is
+        # closed, so the old ones have to go first
+        replace = ("to replace them, delete them in the Style Manager, then "
+                   "import the file again")
+        if broken:
+            report(False, "symbols from emoji_san_core.xml",
+                   "%d of %d do not draw, e.g. %s; %s" % (
+                       len(broken), len(names), ", ".join(broken[:3]),
+                       replace))
+        else:
+            report(True,
+                   "symbols from emoji_san_core.xml: %d, all draw"
+                   % len(names),
+                   "e.g. %s" % names[0] if not other else
+                   "in %d of them the drawing is not that of the installed "
+                   "file (a style file of another release); %s" % (
+                       other, replace))
 
     # --- embedding on save ------------------------------------------------
     try:  # Qt 5

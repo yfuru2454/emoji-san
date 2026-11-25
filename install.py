@@ -150,6 +150,10 @@ def _emoji_san_install(ns):
     except Exception as ex:  # nothing has been written yet
         print("EmOji-san: could not get the files (%s: %s). Nothing changed."
               % (type(ex).__name__, ex))
+        if "://" in source:
+            print("  If QGIS cannot reach GitHub, there is another way: "
+                  "https://github.com/%s#without-internet-access-from-qgis"
+                  % REPO)
         return
 
     # --- what is installed now --------------------------------------------

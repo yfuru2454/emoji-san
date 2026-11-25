@@ -136,12 +136,17 @@ install line in QGIS 4 and it gets its own folder, with the same set.
 
 ## Without internet access from QGIS
 
-Download the source ZIP of the release with a browser. Then run this line
-with the path of the ZIP (on Windows, write it as `r'C:\...'`):
+If the install line ends in a network error (no internet access from QGIS,
+a proxy, a certificate error), download the source ZIP of the release with a
+browser and run this line with the path of the ZIP. On Windows, write the
+path as `r'C:\...'`.
 
 ```python
 ZIP='/path/to/emoji-san-1.0.0.zip'; import zipfile; exec(zipfile.ZipFile(ZIP).read('emoji-san-1.0.0/install.py'))
 ```
+
+Safari unpacks the ZIP and leaves a folder. Compress the folder again
+(right-click, **Compress**) and use that ZIP.
 
 ## What is installed
 
@@ -194,11 +199,14 @@ Once a year, when Noto Emoji has the new emoji:
    `python3 build/make_core.py`.
 2. Change the version in `TAG` in `install.py` and everywhere in this
    README (search for the old number), and correct the numbers in the Sets
-   table.
-3. `python3 tests/scenarios.py` runs install, upgrade, downgrade, embedding
-   and uninstall in an empty QGIS settings folder, and checks that step 2
-   left nothing out. It needs a Python that can import `qgis`; the head of
-   the file shows how to run it in Docker.
+   table. Set `CLDR` in `install.py` to the latest release of
+   [cldr-json](https://github.com/unicode-org/cldr-json); the names of new
+   emoji in other languages come from there.
+3. `python3 tests/scenarios.py --online` runs install, upgrade, downgrade,
+   embedding and uninstall in an empty QGIS settings folder. It also checks
+   that step 2 left nothing out and that every emoji gets a name from CLDR.
+   It needs a Python that can import `qgis`; the head of the file shows how
+   to run it in Docker.
 4. Commit, tag and push, then attach the style file to the release:
 
    ```bash
@@ -313,11 +321,13 @@ SVGブラウザは開くたびに、**設定 → オプション → システ�
 
 ## QGISからインターネットに出られないとき
 
-リリースのソースのZIPをブラウザでダウンロードします。次の行のパスをそのZIPの場所に書き換えて実行します（Windowsでは`r'C:\...'`の形で書きます）。
+インストールの行がネットワークのエラーで終わるとき（QGISからインターネットに出られない、プロキシ、証明書のエラーなど）は、リリースのソースのZIPをブラウザでダウンロードし、次の行のパスをそのZIPの場所に書き換えて実行します。Windowsではパスを`r'C:\...'`の形で書きます。
 
 ```python
 ZIP='/path/to/emoji-san-1.0.0.zip'; import zipfile; exec(zipfile.ZipFile(ZIP).read('emoji-san-1.0.0/install.py'))
 ```
+
+SafariはZIPを展開してフォルダだけを残します。その場合はフォルダを圧縮し直して（右クリック → **圧縮**）、できたZIPを使います。
 
 ## インストールされるもの
 
@@ -341,8 +351,8 @@ ZIP='/path/to/emoji-san-1.0.0.zip'; import zipfile; exec(zipfile.ZipFile(ZIP).re
 年に1回、Noto Emojiに新しい絵文字が入ったら:
 
 1. `python3 build/update_from_upstream.py`でSVGファイルを取得し、`index.csv`とスタイルファイルを作り直します。picosvgが必要です（`python3 -m pip install picosvg`）。増えた絵文字と消えた絵文字が表示されます。増えた絵文字はブラウザだけでなくQGISでも見てください。QGISはQtでSVGを描くので、ブラウザと同じに描けないことがあります。Sのセットを変えるときは`core_list.txt`を編集して`python3 build/make_core.py`を実行します。
-2. `install.py`の`TAG`と、このREADMEにあるバージョン（古い番号で検索すると見つかります）をすべて書き換え、セットの表の個数を直します。
-3. `python3 tests/scenarios.py`は、空のQGIS設定フォルダで、インストール、セットの切り替え、埋め込み、アンインストールを通しで実行し、2の書き換え漏れも調べます。`qgis`をimportできるPythonが必要です。Dockerでの実行方法はファイルの先頭にあります。
+2. `install.py`の`TAG`と、このREADMEにあるバージョン（古い番号で検索すると見つかります）をすべて書き換え、セットの表の個数を直します。`install.py`の`CLDR`は[cldr-json](https://github.com/unicode-org/cldr-json)の最新リリースに合わせます。新しい絵文字の各国語の名前はそこから取ります。
+3. `python3 tests/scenarios.py --online`は、空のQGIS設定フォルダで、インストール、セットの切り替え、埋め込み、アンインストールを通しで実行します。2の書き換え漏れと、すべての絵文字にCLDRの名前が付くことも調べます。`qgis`をimportできるPythonが必要です。Dockerでの実行方法はファイルの先頭にあります。
 4. コミットしてタグを付け、プッシュしてから、スタイルファイルをリリースに添付します。
 
    ```bash

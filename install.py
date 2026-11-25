@@ -236,10 +236,51 @@ def _set_embed(root, on):
     return on
 
 
+# The greeting: Japanese "ojisan-kobun" (the emoji-heavy texting style of
+# middle-aged men) in a Japanese QGIS, a "Love, Dad"-style sign-off
+# elsewhere. The technical line below it stays plain for bug reports.
+GREETINGS = {
+    "ja": {
+        "first": "EmOji-san👨‍💼参上❗ %(n)d個の絵文字をお届けしたヨ😃✨ "
+                 "地図がにぎやかになるネ🗾💕",
+        "up": "おっ、%(set)sサイズにアップグレードだネ❗ %(added)d個も"
+              "増えちゃった😆💕",
+        "down": "%(set)sサイズに戻したんだネ😅 %(removed)d個とお別れ、"
+                "ちょっと寂しいけど了解だヨ💦",
+        "same": "特に変わりなしだヨ❗ 今日も地図作り、がんばってネ💪✨",
+    },
+    "en": {
+        "first": "%(n)d emoji installed! Have fun with your maps 😃✨ "
+                 "Love, EmOji-san 👨‍💼",
+        "up": "Upgraded to size %(set)s! %(added)d more emoji for you 😆👍 "
+              "Love, EmOji-san 👨‍💼",
+        "down": "Back to size %(set)s... %(removed)d emoji said goodbye 😢 "
+                "Love, EmOji-san 👨‍💼",
+        "same": "All up to date! Keep up the good work 💪 "
+                "Love, EmOji-san 👨‍💼",
+    },
+}
+
+
+def _greeting(prev, n, added, removed):
+    if prev is None:
+        kind = "first"
+    elif SETS.index(SET) > SETS.index(prev):
+        kind = "up"
+    elif SETS.index(SET) < SETS.index(prev):
+        kind = "down"
+    else:
+        kind = "same"
+    lang = "ja" if _qgis_locale().lower().startswith("ja") else "en"
+    return GREETINGS[lang][kind] % {"n": n, "set": SET, "added": added,
+                                    "removed": removed}
+
+
 def main():
     global SET
+    prev = _installed_set(_paths()[0])
     if not SET:  # no SET given: keep what is installed, else the default
-        SET = _installed_set(_paths()[0]) or DEFAULT_SET
+        SET = prev or DEFAULT_SET
     if SET not in SETS:
         print("EmOji-san: unknown SET %r — use 'S', 'M' or 'L'" % SET)
         return
@@ -305,6 +346,8 @@ def main():
     col = _write_index(root, rows)
     newly = _register(root)
     embed = _set_embed(root, EMBED)
+    hello = _greeting(prev, len(rows), added, removed)
+    print(hello)
     msg = "EmOji-san %s: %d emoji (+%d added, -%d removed) -> %s" % (
         SET, len(rows), added, removed, root)
     print(msg)
@@ -329,7 +372,7 @@ def main():
     try:
         from qgis.utils import iface
         if iface:
-            iface.messageBar().pushSuccess("EmOji-san", msg)
+            iface.messageBar().pushSuccess("EmOji-san", hello)
     except Exception:
         pass
 

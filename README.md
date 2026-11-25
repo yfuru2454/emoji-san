@@ -17,6 +17,7 @@ Google Noto Emoji, installed with one line in the Python console.
 3. You should see:
 
    ```
+   200 emoji installed! Have fun with your maps 😃✨ Love, EmOji-san 👨‍💼
    EmOji-san S: 200 emoji (+200 added, -0 removed) -> .../QGIS3/EmOji-san
      index.csv (+ name_ja)
      registered as an SVG path (Settings > Options > System)
@@ -152,6 +153,7 @@ Google の Noto Emoji を、Pythonコンソールに1行貼るだけでインス
 3. 次のように表示されれば成功
 
    ```
+   EmOji-san👨‍💼参上❗ 200個の絵文字をお届けしたヨ😃✨ 地図がにぎやかになるネ🗾💕
    EmOji-san S: 200 emoji (+200 added, -0 removed) -> .../QGIS3/EmOji-san
      index.csv (+ name_ja)
      registered as an SVG path (Settings > Options > System)

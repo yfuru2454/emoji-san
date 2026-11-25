@@ -113,7 +113,11 @@ if isinstance(setting, str):
 in_settings = any(norm(p) == norm(root) for p in (setting or []) if p)
 in_qgis = any(norm(p) == norm(root) for p in QgsApplication.svgPaths())
 report(in_settings and in_qgis, "registered as an SVG path",
-       "settings=%s, QgsApplication.svgPaths()=%s" % (in_settings, in_qgis))
+       "settings=%s, QgsApplication.svgPaths()=%s%s" % (
+           in_settings, in_qgis,
+           "" if in_settings and in_qgis else
+           " -> run install.py again to re-register (or add the folder "
+           "under Settings > Options > System > SVG paths)"))
 
 # 3. index.csv -----------------------------------------------------------
 idx = os.path.join(root, "index.csv")

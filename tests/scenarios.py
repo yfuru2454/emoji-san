@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Maintainer test: install, switch sets, embed, check and uninstall.
+r"""Maintainer test: install, switch sets, embed, check and uninstall.
 
     python3 tests/scenarios.py
 
 Needs a Python that can import qgis (QGIS 3 or 4), for example inside the
 qgis/qgis Docker image:
 
-    docker run --rm -v "$PWD":/repo -w /repo -e QT_QPA_PLATFORM=offscreen \\
+    docker run --rm -v "$PWD":/repo -w /repo -e QT_QPA_PLATFORM=offscreen \
         qgis/qgis python3 tests/scenarios.py
 
 Run it before tagging a release. It zips the working tree, gives QGIS an
@@ -20,6 +20,10 @@ when it closes; that folder can be deleted.
 
 Nothing is downloaded, unless you add --online: then it also fetches the
 emoji names of four languages from Unicode CLDR, the way install.py does.
+
+On Linux, run it once with MALLOC_PERTURB_=165 in the environment as well.
+Freed memory is overwritten then, and a script that uses a QGIS object after
+it was deleted crashes here, not in somebody's QGIS.
 """
 import contextlib
 import csv
@@ -194,6 +198,9 @@ def scenarios(settings, work, online):
         options.setdefault("LOCALE", "en")  # no download of names
         return console("install.py", **options)
 
+    def no_network(url, timeout=None):
+        raise urllib.error.URLError("no network in this test")
+
     print("\n1. first install, with the line of README.md for a computer "
           "without internet access")
     lines = re.findall(r"^ZIP='/path/to/emoji-san-[0-9.]+\.zip'; .+$", readme,
@@ -273,6 +280,14 @@ def scenarios(settings, work, online):
     out, left = console("install.py", ZIP=os.path.join(work, "no.zip"))
     check("could not get the files" in out and svgs(root) == before
           and not left, "a missing ZIP changes nothing")
+    with unittest.mock.patch("urllib.request.urlopen", no_network):
+        out, left = console("install.py", ZIP="https://example.invalid/x.zip")
+    check("could not get the files (URLError" in out
+          and "#without-internet-access-from-qgis" in out
+          and "\n## Without internet access from QGIS\n" in readme
+          and svgs(root) == before and not left,
+          "a download that fails changes nothing, and the report points at "
+          "the section of README.md for that")
 
     print("\n6. an install without usable index.csv (older installer)")
     os.remove(os.path.join(root, "index.csv"))
@@ -346,9 +361,6 @@ def scenarios(settings, work, online):
         with open(os.path.join(root, "index.csv"), encoding="utf-8",
                   newline="") as f:
             return {r["path"]: r for r in csv.DictReader(f)}
-
-    def no_network(url, timeout=None):
-        raise urllib.error.URLError("no network in this test")
 
     parents = {"supplemental": {"parentLocales": {"parentLocale": {
         "es-MX": "es-419"}}}}

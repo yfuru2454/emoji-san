@@ -86,8 +86,8 @@ def _emoji_san_install(ns):
     size = ns.pop("SET", None)
     embed = ns.pop("EMBED", None)
     language = ns.pop("LOCALE", None)
-    source = ns.pop("ZIP", None) or (
-        "https://github.com/%s/archive/refs/tags/%s.zip" % (REPO, TAG))
+    source = str(ns.pop("ZIP", None) or (
+        "https://github.com/%s/archive/refs/tags/%s.zip" % (REPO, TAG)))
     if size is not None:
         if str(size).strip().upper() not in SETS:
             print("EmOji-san: SET is 'S', 'M' or 'L', not %r. "
@@ -261,7 +261,10 @@ def _emoji_san_install(ns):
                     try:
                         data = fetch("cldr-%s-full/%s/%s/annotations.json"
                                      % (package, key, code))
-                    except urllib.error.HTTPError:
+                    except urllib.error.HTTPError as error:
+                        error.close()
+                        if error.code != 404:
+                            raise  # not "no such file": reported below
                         continue  # CLDR has no file for this locale
                     found = code
                     for emoji, entry in data[key]["annotations"].items():
@@ -326,7 +329,8 @@ def _emoji_san_install(ns):
         startup = os.path.normpath(os.path.join(
             QStandardPaths.writableLocation(where), "startup.py"))
         hook = os.path.join(root, "embed_on_save.py")
-        block = ("%s\ntry:\n    exec(open(%r, 'rb').read(), "
+        block = ("%s\ntry:\n    with open(%r, 'rb') as _emoji_san:\n"
+                 "        exec(_emoji_san.read(), "
                  "{'__name__': 'emoji_san_embed'})\nexcept Exception:\n"
                  "    pass\n%s\n" % (BEGIN, hook, END))
         text = ""

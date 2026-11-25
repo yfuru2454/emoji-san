@@ -158,6 +158,9 @@ ours = []
 for p in paths:
     if not os.path.isdir(p):
         out("  [missing] " + p)
+        if p in (setting or []):
+            hints.append("Registered SVG path no longer exists (harmless, "
+                         "but can be removed): %s" % p)
         continue
     n, dirs, dt, files, cut = walk_svgs(p, BUDGET / 2)
     total += n
@@ -165,7 +168,27 @@ for p in paths:
         n, dirs, ms(dt), p, "  (STOPPED: too big)" if cut else ""))
     if os.path.normcase(os.path.normpath(p)) == os.path.normcase(root):
         ours = files
-    if cut or n > 5000:
+    if is_win():
+        kind = win_drive_info(p)
+        pn = os.path.normcase(p).replace("/", "\\")
+        shared = pn.startswith(("c:\\mac\\", "\\\\psf\\",
+                                "\\\\mac\\"))  # Parallels shares
+        if "NETWORK" in kind or shared:
+            out("           ^ on %s" % ("a Parallels shared folder (Mac "
+                                        "files)" if shared else kind))
+            hints.append("SVG path %s is on %s: every preview is read "
+                         "across it. Move it to a local folder or remove "
+                         "it under Settings > Options > System > SVG "
+                         "paths." % (p, "a Parallels shared folder"
+                                     if shared else "a network drive"))
+    if n > 2000 and os.path.normcase(os.path.normpath(p)) != \
+            os.path.normcase(root):
+        hints.append("SVG path %s holds %d SVGs. The SVG browser lists "
+                     "the SVGs of ALL paths when it opens, so this is "
+                     "loaded every time. If it is an older full Noto Emoji "
+                     "copy, EmOji-san replaces it: remove it under "
+                     "Settings > Options > System > SVG paths." % (p, n))
+    elif cut or n > 5000:
         hints.append("SVG path %s holds %s SVGs: QGIS walks all of it "
                      "every time the SVG browser opens. Remove it under "
                      "Settings > Options > System > SVG paths."
@@ -214,7 +237,7 @@ if ours:
     per = t_first / max(1, len(times))
     est = per * 1058
     out("  -> reading all 1,058 would take about %.1f s" % est)
-    if per > 0.005:
+    if per > 0.002:
         hints.append("Reading one SVG takes %s on average (normal: well "
                      "under 1 ms). Typical causes: antivirus scanning "
                      "each file, network or cloud storage. Try excluding "

@@ -1,257 +1,216 @@
 # EmOji-san
 
-**Noto Emoji markers for QGIS** — and yes, there is an *Oji-san* (おじさん) hiding in the name.
+Color emoji (🏪 🚌 🏥 ♨️) as point symbols in QGIS.
+Google Noto Emoji, installed with one line in the Python console.
 
-Use color emoji (🏪 🚌 🏥 🌸 …) as point symbols in QGIS — no plugin,
-one paste into the Python console, one download.
+[日本語は下にあります](#日本語)
 
-QGIS font markers can't render color emoji fonts
-([qgis/QGIS#47970](https://github.com/qgis/QGIS/issues/47970)), but SVG
-markers work perfectly. This repository ships a curated, renamed,
-ready-to-use copy of [Google Noto
-Emoji](https://github.com/googlefonts/noto-emoji) SVGs, and a tiny
-installer that puts them next to your QGIS profiles and registers them
-as an SVG path, so the SVG browser shows an **EmOji-san** group with one
-sub-group per category.
+## Install
 
-## Install (one paste)
+1. In QGIS, open **Plugins → Python Console**.
+2. Paste this line and press Enter:
 
-Open **Plugins → Python Console** and paste:
+   ```python
+   import urllib.request as u; exec(u.urlopen('https://raw.githubusercontent.com/yfuru2454/emoji-san/v1.0.0/install.py').read())
+   ```
 
-```python
-import urllib.request as u; exec(u.urlopen('https://raw.githubusercontent.com/yfuru2454/emoji-san/v1.0.0/install.py').read())
-```
+3. You should see:
 
-Then open any point layer's symbology → **SVG Marker → SVG Browser**
-and find the **EmOji-san** group. That's it.
+   ```
+   EmOji-san: 1060 files installed -> .../QGIS3/EmOji-san
+     index.csv: 1058 emoji (+ name_ja)
+     registered as an SVG path (Settings > Options > System)
+   ```
 
-- One HTTP request: the installer downloads this repository's tagged
-  archive (~8 MB) and extracts the SVGs. A few seconds on a normal
-  connection, proxy-friendly.
-- Installs the **map set**: ~1,060 emoji in 6 categories — Animals &
-  Nature, Food & Drink, Travel & Places, Activities, Objects, Symbols.
-  The standard Unicode emoji you know from iPhone/Android keyboards,
-  in Google's Noto design.
-- Skin-tone variants are excluded (they triple the file count and have
-  no cartographic value).
-- Re-running simply overwrites — always safe.
+4. Open a point layer's **Symbology**, set the symbol layer type to
+   **SVG Marker**, and pick a category under **EmOji-san** in the
+   SVG browser.
 
-### For scripts and AI agents: `index.csv`
+## Options
 
-The installed folder also holds `index.csv`, one row per emoji:
+Put the option in front of the same line, separated by `;`.
+The console only accepts one line at a time.
 
-| emoji | codepoint | name | name_ja | category | path | noto_file |
-|---|---|---|---|---|---|---|
-| ♨️ | U+2668 U+FE0F | hot springs | 温泉マーク | Travel & Places | Travel and Places/hot_springs.svg | emoji_u2668.svg |
+- All emoji including faces and people (1,595):
+  `FULL = True; import urllib.request as u; exec(...)`
+- Names in another language in `index.csv`:
+  `LOCALE = 'de'; import urllib.request as u; exec(...)`
 
-`path` is relative to the SVG path, the same form QGIS saves in projects.
-The `name_<lang>` column is added at install time in your QGIS's
-language, from Unicode CLDR (~100 languages; none for English). Scripts
-and AI assistants for QGIS can look emoji up here instead of guessing
-file names. Force a language with `LOCALE = 'de'; import urllib.request as u; exec(...)`.
+## 200 core symbols (no install needed)
 
-### Full set
+- Download `emoji_san_core.xml` from [Releases](../../releases).
+- **Settings → Style Manager → Import/Export → Import Items**,
+  choose the file, **Select All**, **Import**.
+- The SVGs are embedded, so projects using them work on other
+  computers too.
 
-Want faces and people too? Put `FULL = True;` in front of the same
-line (adds Smileys & Emotion, People & Body, and the 8 generic flags —
-~1,600 total). The QGIS console runs one line at a time, so keep it on
-one line:
-
-```python
-FULL = True; import urllib.request as u; exec(u.urlopen('https://raw.githubusercontent.com/yfuru2454/emoji-san/v1.0.0/install.py').read())
-```
-
-### Prefer a GUI? (QGIS Resource Sharing)
-
-This repository doubles as a [QGIS Resource
-Sharing](https://plugins.qgis.org/plugins/qgis_resource_sharing/)
-repository: install that plugin, add this repository's URL under
-Settings, and install the "EmOji-san" collections with clicks instead
-of code.
-
-### Core set: 200 embedded symbols (no install at all)
-
-A hand-picked **core set (200 symbols)** is also shipped as a style
-file with the SVGs **embedded** — no files, no paths, nothing to break
-when you share a project. Download `emoji_san_core.xml` from the
-[Releases](../../releases) page (or `styles/` in this repository) and
-import it via **Settings → Style Manager → Import/Export → Import**.
-Symbols are tagged (`EmOji-san`, `Noto Emoji` + category) and
-searchable. Selection rationale: simple shapes that stay legible at
-point-marker size (faces, hands, single objects, signs), matching
-Mapbox Maki icons / major OSM POI tags; see `build/make_core.py`.
-
-### Check your install
-
-Paste this into the QGIS Python console after installing. It checks the
-folder, the SVG path registration, `index.csv`, that QGIS really renders
-the SVGs (and, if imported, all core style symbols), then adds a small
-"EmOji-san demo" layer around the map centre (`DEMO = False;` in front
-to skip it):
+## Check the install
 
 ```python
 import urllib.request as u; exec(u.urlopen('https://raw.githubusercontent.com/yfuru2454/emoji-san/v1.0.0/tests/check_install.py').read())
 ```
 
-### Uninstall
+- Expected: `Result: ALL GOOD (9 passed, 0 failed, 0 skipped)`
+- It also adds an "EmOji-san demo" layer with 8 emoji. Put
+  `DEMO = False; ` in front to skip it.
+
+## Uninstall
 
 ```python
 import urllib.request as u; exec(u.urlopen('https://raw.githubusercontent.com/yfuru2454/emoji-san/v1.0.0/uninstall.py').read())
 ```
 
-(or delete the `EmOji-san` folder next to the `profiles` folder in your
-[QGIS settings
-folder](https://docs.qgis.org/latest/en/docs/user_manual/introduction/qgis_configuration.html)
-and remove it under Settings → Options → System → SVG paths).
+## If the SVG browser is slow or freezes
 
-## Performance notes
+- In **Settings → Options → System → SVG paths**, remove folders you no
+  longer need, especially an older full Noto Emoji folder (3,000+ SVGs)
+  or folders on a network drive or a shared folder.
+- In the SVG browser, click a category, not the top **EmOji-san** group.
+- To find the cause, run the diagnostics. It prints `LIKELY CAUSES`:
 
-Large SVG collections can make the QGIS SVG browser sluggish. This
-distribution is designed around that:
+  ```python
+  import urllib.request as u; exec(u.urlopen('https://raw.githubusercontent.com/yfuru2454/emoji-san/v1.0.0/tests/diagnose.py').read())
+  ```
 
-- **Curated by default** — ~1,060 files instead of Noto's full 3,750.
-- **Per-category groups** — the folder is registered as its own SVG
-  path, so each category shows up as a sub-group and the browser loads
-  one category (at most ~360 files) at a time. (Folders nested inside
-  the profile's `svg` folder are NOT split this way: QGIS lists
-  everything under them as one group.)
-- **Readable file names** (`convenience_store.svg`, not
-  `emoji_u1f3ea.svg`) — hover tooltips tell you what's what.
-- Keep your QGIS settings folder on a **local disk**. Profiles on network
-  drives or heavily-synced folders (OneDrive etc.) are a known cause of
-  a slow SVG browser
-  ([qgis/QGIS#59056](https://github.com/qgis/QGIS/issues/59056)).
-- Rendering many emoji points? Consider the layer rendering option
-  **"Render as raster"**, and avoid per-feature data-defined
-  size/rotation where you can — QGIS's SVG cache only hits on identical
-  parameters.
+## What you get
 
-## Security & reproducibility
-
-- The one-liner executes code from this repository — **read
-  [install.py](install.py) first**; it's ~100 short lines.
-- Pin the URL to a **tag or commit**, never a branch, so what you run
-  can't silently change.
-- The SVGs come from this repository's tagged archive, not from a
-  third-party CDN at run time. The upstream noto-emoji commit they were
-  taken from is recorded in [UPSTREAM_COMMIT.txt](UPSTREAM_COMMIT.txt).
-- Behind a corporate proxy, the standard `HTTPS_PROXY` environment
-  variables are honored by QGIS's bundled Python.
-
-## Maintenance (for the repository owner)
-
-Emoji needs don't change daily — new emoji land roughly once a year
-with Unicode releases. Yearly (or whenever you feel like it):
-
-```bash
-python3 build/update_from_upstream.py   # re-fetch, rename, reorganize
-git add -A && git commit -m "Update to noto-emoji <commit>"
-git tag v2027.1 && git push --tags
-```
-
-then update the tag in `install.py` and this README. Nothing else to
-upload: the installer downloads the tagged repository archive that
-GitHub serves automatically. Old tags keep working forever, so maps
-built against an old tag stay reproducible — and this repository keeps
-working even if upstream reorganizes its folders again (it moved
-`svg/` to `2D/svg/` in 2025; this repo absorbed that so your one-liner
-never notices).
-
-## What about country flags?
-
-Not included: Noto keeps country flags in a separate
-`third_party/region-flags` tree with per-country public-domain caveats,
-so they're deliberately out of scope here. See the
-[noto-emoji README](https://github.com/googlefonts/noto-emoji) if you
-need them.
-
-## How the set is chosen
-
-`build/update_from_upstream.py` intersects:
-
-1. [gemoji](https://github.com/github/gemoji)'s `emoji.json` — the
-   standard RGI emoji set with categories and English names (what
-   iPhone/Android keyboards show), and
-2. the SVGs actually present in `googlefonts/noto-emoji` at the
-   recorded commit,
-
-drops skin-tone variants, renames files to readable slugs, and sorts
-them into category folders.
+- 1,058 emoji in 6 categories: Activities, Animals and Nature,
+  Food and Drink, Objects, Symbols, Travel and Places.
+- `FULL = True` adds Smileys and Emotion, People and Body, and 8
+  generic flags.
+- No skin-tone variants and no country flags.
+- English file names (`convenience_store.svg`), so the SVG browser's
+  search box finds them by name.
+- `index.csv`: one row per emoji (emoji, codepoint, name, name in your
+  QGIS language, category, path), for scripts and AI assistants.
+- Also usable as a [QGIS Resource Sharing](https://plugins.qgis.org/plugins/qgis_resource_sharing/)
+  repository.
 
 ## License
 
-- Emoji artwork: [Apache License
-  2.0](https://github.com/googlefonts/noto-emoji/blob/main/LICENSE)
-  (© Google), redistributed here with modifications (subset selection,
-  renaming, reorganization) as described in [NOTICE](NOTICE). A copy of
-  the license is installed next to the SVGs.
-- Installer and build scripts: MIT.
+- Emoji artwork: [Google Noto Emoji](https://github.com/googlefonts/noto-emoji),
+  Apache-2.0. Subset, renamed and sorted into folders (see `NOTICE`).
+- Scripts: MIT.
+- The one-line installers run code from this repository. Read
+  `install.py` first if you like; the URLs are pinned to a tag.
 
-## FAQ: why not a QGIS plugin?
+## Maintenance
 
-Installing a folder of SVGs is a one-time file copy. A plugin would add
-an install/update/review lifecycle around something that has no runtime
-behavior — more maintenance for zero added capability. The two channels
-this repository already offers cover both audiences: the one-liner for
-console users, and QGIS Resource Sharing (the official way to
-distribute symbol collections) for GUI users.
+Once a year, when new emoji come out:
+
+1. `python3 build/update_from_upstream.py` and `python3 build/make_core.py`
+2. Change the version (e.g. `v1.0.0` → `v1.1.0`) in `install.py` (`TAG`)
+   and in every URL of this README.
+3. Commit, tag and push:
+
+   ```bash
+   git add -A && git commit -m "Update emoji" && git tag v1.1.0 && git push && git push --tags
+   ```
 
 ---
 
 # 日本語
 
-QGISでカラー絵文字をポイントシンボルとして使うための配布リポジトリです。
-プラグイン不要、Pythonコンソールに1行貼るだけ。ダウンロードは1回
-（タグ付きアーカイブ約8MB）で済みます。
+QGISで、カラーの絵文字（🏪 🚌 🏥 ♨️）をポイントのシンボルとして使えます。
+Google の Noto Emoji を、Pythonコンソールに1行貼るだけでインストールします。
 
-**インストール**: プラグイン → Pythonコンソール に上の
-`import urllib.request as u; exec(...)` のワンライナーを貼って Enter。シンボロジの SVGマーカー → SVGブラウザ に
-**EmOji-san** グループが現れ、その下にカテゴリ別のグループが並びます
-（インストール先は QGIS3 設定フォルダ直下の `EmOji-san` で、SVGパスに
-自動登録されます）。
+## インストール
 
-- 標準では地図向け6ジャンル 約1,060個（動物・食べ物・場所/交通・
-  活動・モノ・記号）。iPhone/Android の標準絵文字セット相当から選定し、
-  肌色バリアントは除外しています。
-- 顔・人物まで欲しい場合は、同じワンライナーの先頭に `FULL = True; ` を
-  付けて1行のまま実行（約1,600個）。QGISのコンソールは複数行を一度に
-  貼ると受け付けないため、1行にしてください。
-- **インストール不要のコア200個**: SVGを埋め込んだスタイルファイル
-  `emoji_san_core.xml` を Releases から取得し、設定 → スタイルマネージャ →
-  インポート。パス参照がないので、プロジェクトを人に渡しても壊れません。
-- **スクリプトやAI向けの対応表** `index.csv` も一緒に入ります。絵文字・
-  コードポイント・英語名・**QGISの表示言語での名前**（Unicode CLDR、
-  約100言語）・カテゴリ・パスが1行ずつ並び、AIアシスタントがファイル名を
-  推測せずに絵文字を選べます。言語を指定するなら `LOCALE = 'de'; import urllib.request as u; exec(...)`。
-- GUI派には QGIS Resource Sharing プラグインからも導入できます
-  （このリポジトリのURLをリポジトリとして追加）。
-- アンインストールは上記ワンライナー。手動なら QGIS3 設定フォルダの
-  `EmOji-san` を削除し、オプション → システム → SVGパスから外します。
+1. QGISで **プラグイン → Pythonコンソール** を開く
+2. 次の1行を貼って Enter
 
-**インストールの確認**: インストール後に、Pythonコンソールで次の1行を
-実行すると、フォルダ・SVGパスの登録・index.csv・QGISで実際に描画できるか
-（コアのスタイルを入れていれば200個すべて）を確かめ、地図の中心に8個の
-絵文字を置いたデモ層を追加します（不要なら先頭に `DEMO = False; `）。
+   ```python
+   import urllib.request as u; exec(u.urlopen('https://raw.githubusercontent.com/yfuru2454/emoji-san/v1.0.0/install.py').read())
+   ```
+
+3. 次のように表示されれば成功
+
+   ```
+   EmOji-san: 1060 files installed -> .../QGIS3/EmOji-san
+     index.csv: 1058 emoji (+ name_ja)
+     registered as an SVG path (Settings > Options > System)
+   ```
+
+4. ポイントレイヤの **シンボロジ** で、シンボルレイヤの種類を
+   **SVGマーカー** にし、SVGブラウザの **EmOji-san** の下のカテゴリを選ぶ
+
+## オプション
+
+同じ1行の先頭に `;` で区切って付けます。
+コンソールは1行ずつしか受け付けないので、1行のまま貼ってください。
+
+- 顔・人物も含めた全部（1,595個）:
+  `FULL = True; import urllib.request as u; exec(...)`
+- `index.csv` の名前を別の言語にする:
+  `LOCALE = 'de'; import urllib.request as u; exec(...)`
+
+## コア200個（インストール不要）
+
+- [Releases](../../releases) から `emoji_san_core.xml` をダウンロード
+- **設定 → スタイルマネージャ → インポート/エクスポート → アイテムのインポート**
+  でファイルを選び、**すべて選択** → **インポート**
+- SVGがシンボルに埋め込まれているので、プロジェクトを他のPCに渡しても
+  表示が崩れません
+
+## インストールの確認
 
 ```python
 import urllib.request as u; exec(u.urlopen('https://raw.githubusercontent.com/yfuru2454/emoji-san/v1.0.0/tests/check_install.py').read())
 ```
 
-**パフォーマンス**: 独立したSVGパスとして登録するので、カテゴリごとの
-グループに分かれ、選んだカテゴリだけが読み込まれます（プロファイルの
-`svg` フォルダの中に置くと、下のフォルダもまとめて1グループで表示され
-るため分割されません）。設定フォルダ
-はローカルディスクに置き、ネットワークドライブや同期フォルダは避けて
-ください。大量ポイント描画時はレイヤの「ラスタとして描画」も有効です。
+- 期待される表示: `Result: ALL GOOD (9 passed, 0 failed, 0 skipped)`
+- 絵文字8個を置いた「EmOji-san demo」レイヤも追加されます。
+  不要なら先頭に `DEMO = False; ` を付けます
 
-**メンテナンス（リポジトリ管理者向け）**: 絵文字の追加はUnicodeの
-年1サイクルなので、年1回 `build/update_from_upstream.py` を実行して
-コミット・タグを打つだけ。本家がフォルダ構成を変えても（2025年に
-`svg/` → `2D/svg/` へ移動）、この配布リポジトリが吸収するので
-利用者のワンライナーは壊れません。
+## アンインストール
 
-**ライセンス**: 絵文字はGoogleのApache-2.0。選抜・改名・フォルダ再編
-という改変を加えて再配布しています（NOTICE参照）。スクリプトはMIT。
+```python
+import urllib.request as u; exec(u.urlopen('https://raw.githubusercontent.com/yfuru2454/emoji-san/v1.0.0/uninstall.py').read())
+```
 
-**実行前に install.py の中身を読めます**（100行弱です）。URLは
-ブランチではなくタグ/コミットに固定してください。
+## SVGブラウザが遅い・固まるとき
+
+- **設定 → オプション → システム → SVGパス** で、不要なフォルダを外す。
+  特に、以前に登録したNoto Emojiの全セット（3,000個以上）や、
+  ネットワークドライブ・共有フォルダ上のフォルダ
+- SVGブラウザでは、一番上の **EmOji-san** ではなくカテゴリをクリックする
+- 原因を調べるには診断を実行します。`LIKELY CAUSES` に原因が表示されます
+
+  ```python
+  import urllib.request as u; exec(u.urlopen('https://raw.githubusercontent.com/yfuru2454/emoji-san/v1.0.0/tests/diagnose.py').read())
+  ```
+
+## 入っているもの
+
+- 6カテゴリ1,058個: Activities, Animals and Nature, Food and Drink,
+  Objects, Symbols, Travel and Places
+- `FULL = True` で、顔（Smileys and Emotion）、人物（People and Body）、
+  汎用の旗8個を追加
+- 肌の色違いと国旗は含みません
+- ファイル名は英語（`convenience_store.svg`）なので、SVGブラウザの検索欄で
+  名前から探せます
+- `index.csv`: 絵文字ごとに1行（絵文字、コードポイント、英語名、
+  QGISの表示言語での名前、カテゴリ、パス）。スクリプトやAIアシスタント向け
+- [QGIS Resource Sharing](https://plugins.qgis.org/plugins/qgis_resource_sharing/)
+  のリポジトリとしても使えます
+
+## ライセンス
+
+- 絵文字: [Google Noto Emoji](https://github.com/googlefonts/noto-emoji)、
+  Apache-2.0。一部を選び、名前を変え、フォルダに分けています（`NOTICE` 参照）
+- スクリプト: MIT
+- 1行インストールは、このリポジトリのコードを実行します。気になる場合は
+  先に `install.py` を読んでください。URLはタグで版を固定しています
+
+## メンテナンス
+
+年1回、新しい絵文字が出たら:
+
+1. `python3 build/update_from_upstream.py` と `python3 build/make_core.py` を実行
+2. 版（例: `v1.0.0` → `v1.1.0`）を、`install.py` の `TAG` と
+   このREADMEのすべてのURLで書き換える
+3. コミットしてタグを付け、プッシュ
+
+   ```bash
+   git add -A && git commit -m "Update emoji" && git tag v1.1.0 && git push && git push --tags
+   ```

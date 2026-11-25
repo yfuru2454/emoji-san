@@ -10,8 +10,9 @@ QGIS font markers can't render color emoji fonts
 markers work perfectly. This repository ships a curated, renamed,
 ready-to-use copy of [Google Noto
 Emoji](https://github.com/googlefonts/noto-emoji) SVGs, and a tiny
-installer that puts them into your QGIS profile, where the SVG browser
-picks them up automatically.
+installer that puts them next to your QGIS profiles and registers them
+as an SVG path, so the SVG browser shows an **EmOji-san** group with one
+sub-group per category.
 
 ## Install (one paste)
 
@@ -37,12 +38,13 @@ and find the **EmOji-san** group. That's it.
 
 ### Full set
 
-Want faces and people too? Set `FULL = True` first (adds Smileys &
-Emotion, People & Body, and the 8 generic flags — ~1,600 total):
+Want faces and people too? Put `FULL = True;` in front of the same
+line (adds Smileys & Emotion, People & Body, and the 8 generic flags —
+~1,600 total). The QGIS console runs one line at a time, so keep it on
+one line:
 
 ```python
-FULL = True
-exec(__import__('urllib.request', fromlist=['']).urlopen('https://raw.githubusercontent.com/yfuru2454/emoji-san/v1.0.0/install.py').read().decode())
+FULL = True; exec(__import__('urllib.request', fromlist=['']).urlopen('https://raw.githubusercontent.com/yfuru2454/emoji-san/v1.0.0/install.py').read().decode())
 ```
 
 ### Prefer a GUI? (QGIS Resource Sharing)
@@ -71,8 +73,10 @@ Mapbox Maki icons / major OSM POI tags; see `build/make_core.py`.
 exec(__import__('urllib.request', fromlist=['']).urlopen('https://raw.githubusercontent.com/yfuru2454/emoji-san/v1.0.0/uninstall.py').read().decode())
 ```
 
-(or just delete the `svg/EmOji-san` folder in your [QGIS profile
-folder](https://docs.qgis.org/latest/en/docs/user_manual/introduction/qgis_configuration.html)).
+(or delete the `EmOji-san` folder next to the `profiles` folder in your
+[QGIS settings
+folder](https://docs.qgis.org/latest/en/docs/user_manual/introduction/qgis_configuration.html)
+and remove it under Settings → Options → System → SVG paths).
 
 ## Performance notes
 
@@ -80,11 +84,14 @@ Large SVG collections can make the QGIS SVG browser sluggish. This
 distribution is designed around that:
 
 - **Curated by default** — ~1,060 files instead of Noto's full 3,750.
-- **Per-category folders** — the SVG browser renders previews for one
-  folder at a time, so no folder ever holds more than ~360 files.
+- **Per-category groups** — the folder is registered as its own SVG
+  path, so each category shows up as a sub-group and the browser loads
+  one category (at most ~360 files) at a time. (Folders nested inside
+  the profile's `svg` folder are NOT split this way: QGIS lists
+  everything under them as one group.)
 - **Readable file names** (`convenience_store.svg`, not
   `emoji_u1f3ea.svg`) — hover tooltips tell you what's what.
-- Keep your QGIS profile on a **local disk**. Profiles on network
+- Keep your QGIS settings folder on a **local disk**. Profiles on network
   drives or heavily-synced folders (OneDrive etc.) are a known cause of
   a slow SVG browser
   ([qgis/QGIS#59056](https://github.com/qgis/QGIS/issues/59056)).
@@ -173,23 +180,28 @@ QGISでカラー絵文字をポイントシンボルとして使うための配�
 
 **インストール**: プラグイン → Pythonコンソール に上の `exec(...)`
 ワンライナーを貼って Enter。シンボロジの SVGマーカー → SVGブラウザ に
-**EmOji-san** グループが現れます。
+**EmOji-san** グループが現れ、その下にカテゴリ別のグループが並びます
+（インストール先は QGIS3 設定フォルダ直下の `EmOji-san` で、SVGパスに
+自動登録されます）。
 
 - 標準では地図向け6ジャンル 約1,060個（動物・食べ物・場所/交通・
   活動・モノ・記号）。iPhone/Android の標準絵文字セット相当から選定し、
   肌色バリアントは除外しています。
-- 顔・人物まで欲しい場合は `FULL = True` を先に書いてから同じ
-  ワンライナーを実行（約1,600個）。
+- 顔・人物まで欲しい場合は、同じワンライナーの先頭に `FULL = True; ` を
+  付けて1行のまま実行（約1,600個）。QGISのコンソールは複数行を一度に
+  貼ると受け付けないため、1行にしてください。
 - **インストール不要のコア200個**: SVGを埋め込んだスタイルファイル
   `emoji_san_core.xml` を Releases から取得し、設定 → スタイルマネージャ →
   インポート。パス参照がないので、プロジェクトを人に渡しても壊れません。
 - GUI派には QGIS Resource Sharing プラグインからも導入できます
   （このリポジトリのURLをリポジトリとして追加）。
-- アンインストールは上記ワンライナー、またはプロファイルフォルダの
-  `svg/EmOji-san` を削除するだけ。
+- アンインストールは上記ワンライナー。手動なら QGIS3 設定フォルダの
+  `EmOji-san` を削除し、オプション → システム → SVGパスから外します。
 
-**パフォーマンス**: SVGブラウザはフォルダ単位でプレビューを生成する
-ため、カテゴリ別フォルダ分割で選択画面が重くなりません。プロファイル
+**パフォーマンス**: 独立したSVGパスとして登録するので、カテゴリごとの
+グループに分かれ、選んだカテゴリだけが読み込まれます（プロファイルの
+`svg` フォルダの中に置くと、下のフォルダもまとめて1グループで表示され
+るため分割されません）。設定フォルダ
 はローカルディスクに置き、ネットワークドライブや同期フォルダは避けて
 ください。大量ポイント描画時はレイヤの「ラスタとして描画」も有効です。
 

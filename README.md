@@ -81,6 +81,18 @@ searchable. Selection rationale: simple shapes that stay legible at
 point-marker size (faces, hands, single objects, signs), matching
 Mapbox Maki icons / major OSM POI tags; see `build/make_core.py`.
 
+### Check your install
+
+Paste this into the QGIS Python console after installing. It checks the
+folder, the SVG path registration, `index.csv`, that QGIS really renders
+the SVGs (and, if imported, all core style symbols), then adds a small
+"EmOji-san demo" layer around the map centre (`DEMO = False;` in front
+to skip it):
+
+```python
+import urllib.request as u; exec(u.urlopen('https://raw.githubusercontent.com/yfuru2454/emoji-san/v1.0.0/tests/check_install.py').read())
+```
+
 ### Uninstall
 
 ```python
@@ -215,6 +227,15 @@ QGISでカラー絵文字をポイントシンボルとして使うための配�
   （このリポジトリのURLをリポジトリとして追加）。
 - アンインストールは上記ワンライナー。手動なら QGIS3 設定フォルダの
   `EmOji-san` を削除し、オプション → システム → SVGパスから外します。
+
+**インストールの確認**: インストール後に、Pythonコンソールで次の1行を
+実行すると、フォルダ・SVGパスの登録・index.csv・QGISで実際に描画できるか
+（コアのスタイルを入れていれば200個すべて）を確かめ、地図の中心に8個の
+絵文字を置いたデモ層を追加します（不要なら先頭に `DEMO = False; `）。
+
+```python
+import urllib.request as u; exec(u.urlopen('https://raw.githubusercontent.com/yfuru2454/emoji-san/v1.0.0/tests/check_install.py').read())
+```
 
 **パフォーマンス**: 独立したSVGパスとして登録するので、カテゴリごとの
 グループに分かれ、選んだカテゴリだけが読み込まれます（プロファイルの

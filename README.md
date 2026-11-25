@@ -36,6 +36,20 @@ and find the **EmOji-san** group. That's it.
   no cartographic value).
 - Re-running simply overwrites — always safe.
 
+### For scripts and AI agents: `index.csv`
+
+The installed folder also holds `index.csv`, one row per emoji:
+
+| emoji | codepoint | name | name_ja | category | path | noto_file |
+|---|---|---|---|---|---|---|
+| ♨️ | U+2668 U+FE0F | hot springs | 温泉マーク | Travel & Places | Travel and Places/hot_springs.svg | emoji_u2668.svg |
+
+`path` is relative to the SVG path, the same form QGIS saves in projects.
+The `name_<lang>` column is added at install time in your QGIS's
+language, from Unicode CLDR (~100 languages; none for English). Scripts
+and AI assistants for QGIS can look emoji up here instead of guessing
+file names. Force a language with `LOCALE = 'de'; exec(...)`.
+
 ### Full set
 
 Want faces and people too? Put `FULL = True;` in front of the same
@@ -193,6 +207,10 @@ QGISでカラー絵文字をポイントシンボルとして使うための配�
 - **インストール不要のコア200個**: SVGを埋め込んだスタイルファイル
   `emoji_san_core.xml` を Releases から取得し、設定 → スタイルマネージャ →
   インポート。パス参照がないので、プロジェクトを人に渡しても壊れません。
+- **スクリプトやAI向けの対応表** `index.csv` も一緒に入ります。絵文字・
+  コードポイント・英語名・**QGISの表示言語での名前**（Unicode CLDR、
+  約100言語）・カテゴリ・パスが1行ずつ並び、AIアシスタントがファイル名を
+  推測せずに絵文字を選べます。言語を指定するなら `LOCALE = 'de'; exec(...)`。
 - GUI派には QGIS Resource Sharing プラグインからも導入できます
   （このリポジトリのURLをリポジトリとして追加）。
 - アンインストールは上記ワンライナー。手動なら QGIS3 設定フォルダの

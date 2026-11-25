@@ -165,6 +165,9 @@ def main() -> None:
         print("  NG", f)
     if fails:
         sys.exit("ERROR: some downloads failed — rerun.")
+
+    import make_index  # same folder; rebuilds index.csv for this commit
+    make_index.main()
     print("\nDone. Review `git status`, commit, tag, and update the tag "
           "in install.py and README.md.")
 

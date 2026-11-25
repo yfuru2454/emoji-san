@@ -1,4 +1,8 @@
 <!DOCTYPE qgis_style>
+<!-- EmOji-san S set: https://github.com/yfuru2454/emoji-san
+     Emoji artwork: Google Noto Emoji, Apache License 2.0,
+     https://github.com/googlefonts/noto-emoji (commit 99701e07d3d1).
+     The SVG files are embedded as they are, without changes. -->
 <qgis_style version="2">
 <symbols>
   <symbol alpha="1" clip_to_extent="1" type="marker" name="🏪 convenience_store" tags="EmOji-san,Noto Emoji,Travel and Places" favorite="0">

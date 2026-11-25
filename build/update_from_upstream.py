@@ -1,26 +1,31 @@
 #!/usr/bin/env python3
-"""Maintainer tool: (re)build the distribution payload from upstream.
+"""Maintainer tool: fetch the emoji from upstream and rebuild the payload.
 
-Run OUTSIDE QGIS, about once a year (new emoji land roughly on Unicode's
-annual cycle), on a normal machine with git + network:
+Run it about once a year, after Noto Emoji has added the new Unicode emoji.
+It needs git and network access, not QGIS.
 
-    python3 build/update_from_upstream.py
+    python3 build/update_from_upstream.py             noto-emoji main
+    python3 build/update_from_upstream.py <commit>    that commit
 
 What it does:
-  1. fetches gemoji's emoji.json (the standard RGI set, categories,
-     English names)
-  2. lists the SVGs available in googlefonts/noto-emoji at its current
-     main commit (blobless clone — fast, no 1GB checkout)
-  3. downloads the curated intersection, renamed to readable slugs,
-     into  collections/noto_emoji_map/svg/<Category>/  and
-           collections/noto_emoji_people/svg/<Category>/
-  4. refreshes LICENSE-noto-emoji.txt and prints a summary
+  1. reads gemoji's emoji.json: every emoji with its category and English
+     name
+  2. lists the SVG files of googlefonts/noto-emoji at the commit
+  3. downloads each emoji both of them have, skin-tone variants left out,
+     to collections/noto_emoji_{map,people}/svg/<Category>/<name>.svg
+  4. rewrites UPSTREAM_COMMIT.txt and index.csv, and checks that upstream
+     still puts the SVG files under the license in LICENSE-noto-emoji.txt
+  5. runs make_core.py, which fills in the sets and builds the style file
 
-Then review `git status`, commit, tag (e.g. v2027.1), and update the
-tag in install.py / README. install.py downloads the tagged repository
-archive, so nothing else needs uploading.
+It prints the emoji that are new and those that are gone since the last
+run. A file that is gone (renamed or dropped upstream) disappears from the
+users' folders at their next install, and maps that use it show "?". Say so
+in the release notes.
+
+Then go on with "Maintenance" in README.md.
 """
 import concurrent.futures
+import csv
 import json
 import pathlib
 import re
@@ -28,149 +33,178 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import urllib.request
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / "build"))
+import make_core  # noqa: E402
 
-GEMOJI_URL = "https://raw.githubusercontent.com/github/gemoji/master/db/emoji.json"
+GEMOJI_URL = ("https://raw.githubusercontent.com/github/gemoji/master/db/"
+              "emoji.json")
 NOTO_REPO = "https://github.com/googlefonts/noto-emoji.git"
-NOTO_SVG_DIR = "2D/svg"  # moved from "svg/" in 2025; re-check on failure
+NOTO_RAW = "https://raw.githubusercontent.com/googlefonts/noto-emoji/"
+NOTO_SVG_DIR = "2D/svg"  # was "svg" until 2025; look here first if it fails
 
+# gemoji category -> collection. The collections are also what QGIS
+# Resource Sharing offers (metadata.ini); install.py puts both in one folder.
 COLLECTIONS = {
-    "noto_emoji_map": [
-        "Animals & Nature",
-        "Food & Drink",
-        "Travel & Places",
-        "Activities",
-        "Objects",
-        "Symbols",
-    ],
-    # Country flags are not in 2D/svg (they live in third_party/ with
-    # per-country caveats), so "Flags" here only yields the 8 generic ones.
-    "noto_emoji_people": [
-        "Smileys & Emotion",
-        "People & Body",
-        "Flags",
-    ],
+    "map": ["Animals & Nature", "Food & Drink", "Travel & Places",
+            "Activities", "Objects", "Symbols"],
+    # Country flags are not in 2D/svg (upstream keeps them in third_party/,
+    # under other terms), so "Flags" only brings the 8 that are not a
+    # country's.
+    "people": ["Smileys & Emotion", "People & Body", "Flags"],
 }
-
-SKIN = set(range(0x1F3FB, 0x1F400))
-WIN_RESERVED = {"con", "prn", "aux", "nul", *(f"com{i}" for i in range(1, 10)),
-                *(f"lpt{i}" for i in range(1, 10))}
+SKIN_TONES = set(range(0x1F3FB, 0x1F400))
+WINDOWS_RESERVED = {"con", "prn", "aux", "nul",
+                    *(f"com{i}" for i in range(1, 10)),
+                    *(f"lpt{i}" for i in range(1, 10))}
 THREADS = 16
 
 
-def noto_code(emoji: str, keep_fe0f: bool = False) -> str:
-    cps = [f"{ord(c):x}" for c in emoji if keep_fe0f or ord(c) != 0xFE0F]
-    return "_".join(cps)
+def noto_name(emoji, keep_fe0f=False):
+    """Noto's file name for an emoji, e.g. emoji_u1f3ea.svg."""
+    return "emoji_u" + "_".join(
+        f"{ord(c):x}" for c in emoji
+        if keep_fe0f or ord(c) != 0xFE0F) + ".svg"
 
 
-def slugify(desc: str, used: set) -> str:
-    s = desc.lower()
-    s = re.sub(r"[‘’“”\"']", "", s)
-    s = re.sub(r"[^a-z0-9]+", "_", s).strip("_")
-    s = re.sub(r"__+", "_", s) or "emoji"
-    if s in WIN_RESERVED:
-        s += "_"
-    base, i = s, 2
-    while s in used:
-        s, i = f"{base}_{i}", i + 1
-    used.add(s)
-    return s
+def file_name(description, used):
+    """"hot beverage" -> "hot_beverage"; a repeated name gets _2, _3, ..."""
+    name = re.sub(r"[‘’“”\"']", "", description.lower())
+    name = re.sub(r"[^a-z0-9]+", "_", name).strip("_") or "emoji"
+    if name in WINDOWS_RESERVED:
+        name += "_"
+    base, n = name, 2
+    while name in used:
+        name, n = f"{base}_{n}", n + 1
+    used.add(name)
+    return name
 
 
-def main() -> None:
-    print("fetching gemoji ...")
-    gemoji = json.loads(urllib.request.urlopen(GEMOJI_URL).read())
+def upstream_files(commit):
+    """(commit hash, names of the SVG files) of noto-emoji at a commit,
+    without downloading the repository's files."""
+    with tempfile.TemporaryDirectory() as tmp:
+        def git(*args):
+            return subprocess.run(["git", "-C", tmp, *args], check=True,
+                                  capture_output=True, text=True).stdout
+        git("init", "-q")
+        git("fetch", "-q", "--depth", "1", "--filter=blob:none", NOTO_REPO,
+            commit or "HEAD")
+        sha = git("rev-parse", "FETCH_HEAD").strip()
+        names = git("ls-tree", "--name-only",
+                    f"FETCH_HEAD:{NOTO_SVG_DIR}").split()
+    return sha, {n for n in names if n.endswith(".svg")}
 
-    print("listing noto-emoji svg files (blobless clone) ...")
-    with tempfile.TemporaryDirectory() as td:
-        subprocess.run(
-            ["git", "clone", "--filter=blob:none", "--no-checkout",
-             "--depth", "1", NOTO_REPO, td],
-            check=True, capture_output=True)
-        sha = subprocess.run(["git", "-C", td, "rev-parse", "HEAD"],
-                             check=True, capture_output=True,
-                             text=True).stdout.strip()
-        files = subprocess.run(
-            ["git", "-C", td, "ls-tree", "--name-only",
-             f"HEAD:{NOTO_SVG_DIR}"],
-            check=True, capture_output=True, text=True).stdout.split()
-    noto_files = {f for f in files if f.endswith(".svg")}
-    if not noto_files:
-        sys.exit(f"ERROR: no SVGs under {NOTO_SVG_DIR} — "
-                 "did upstream move the folder again?")
-    print(f"  upstream commit: {sha}  ({len(noto_files)} svg files)")
-    raw_base = ("https://raw.githubusercontent.com/googlefonts/noto-emoji/"
-                f"{sha}/{NOTO_SVG_DIR}/")
 
-    cat_to_coll = {c: k for k, cats in COLLECTIONS.items() for c in cats}
-    jobs = []  # (url, dest_path)
-    counts = {}
-    used_by_cat = {}
+def build_rows(gemoji, noto):
+    """One index.csv row for each emoji that gemoji and Noto both have."""
+    collection_of = {c: k for k, cs in COLLECTIONS.items() for c in cs}
+    used, rows = {}, []
     for e in gemoji:
-        cat = e.get("category")
-        coll = cat_to_coll.get(cat)
-        if not coll:
+        category = e.get("category")
+        emoji = e["emoji"]
+        if category not in collection_of \
+                or any(ord(c) in SKIN_TONES for c in emoji):
             continue
-        em = e["emoji"]
-        if any(ord(c) in SKIN for c in em):
-            continue
-        code = noto_code(em)
-        if f"emoji_u{code}.svg" not in noto_files:
-            code = noto_code(em, keep_fe0f=True)
-            if f"emoji_u{code}.svg" not in noto_files:
+        source = noto_name(emoji)
+        if source not in noto:
+            source = noto_name(emoji, keep_fe0f=True)
+            if source not in noto:
                 continue
-        slug = slugify(e["description"], used_by_cat.setdefault(cat, set()))
-        dest = (ROOT / "collections" / coll / "svg"
-                / cat.replace(" & ", " and ") / f"{slug}.svg")
-        jobs.append((raw_base + f"emoji_u{code}.svg", dest))
-        counts[cat] = counts.get(cat, 0) + 1
+        name = file_name(e["description"], used.setdefault(category, set()))
+        rows.append({
+            "emoji": emoji,
+            "codepoint": " ".join(f"U+{ord(c):04X}" for c in emoji),
+            "name": e["description"],
+            "category": category,
+            "collection": collection_of[category],
+            "path": f"{category.replace(' & ', ' and ')}/{name}.svg",
+            "noto_file": source,
+            "set": "",  # make_core.py fills it in
+        })
+    return rows
 
-    # clean rebuild so removed/renamed upstream emoji don't linger
-    for coll in COLLECTIONS:
-        shutil.rmtree(ROOT / "collections" / coll / "svg",
-                      ignore_errors=True)
-    for _, dest in jobs:
-        dest.parent.mkdir(parents=True, exist_ok=True)
 
-    def fetch(job):
-        url, dest = job
+def fetch(url, tries=3):
+    for attempt in range(1, tries + 1):
         try:
-            dest.write_bytes(
-                urllib.request.urlopen(url, timeout=30).read())
-            return None
+            with urllib.request.urlopen(url, timeout=30) as reply:
+                return reply.read()
+        except Exception:
+            if attempt == tries:
+                raise
+            time.sleep(attempt)  # 1,600 requests: one may well be dropped
+
+
+def main(commit=None):
+    print("reading gemoji ...")
+    gemoji = json.loads(fetch(GEMOJI_URL))
+    print("listing the SVG files of noto-emoji ...")
+    sha, noto = upstream_files(commit)
+    if not noto:
+        sys.exit(f"ERROR: no SVG files under {NOTO_SVG_DIR}. Did upstream "
+                 "move the folder again?")
+    print(f"  commit {sha}, {len(noto)} SVG files")
+    rows = build_rows(gemoji, noto)
+
+    # Download everything before touching the repository, so that a failed
+    # run leaves it as it was.
+    print(f"downloading {len(rows)} SVG files ...")
+    base = f"{NOTO_RAW}{sha}/"
+
+    def get(row):
+        try:
+            return fetch(f"{base}{NOTO_SVG_DIR}/{row['noto_file']}")
         except Exception as ex:
-            return f"{url} -> {ex}"
+            return ex
 
-    print(f"downloading {len(jobs)} svgs ...")
-    fails = []
     with concurrent.futures.ThreadPoolExecutor(THREADS) as pool:
-        for i, err in enumerate(pool.map(fetch, jobs), 1):
-            if err:
-                fails.append(err)
-            if i % 300 == 0:
-                print(f"  ... {i} / {len(jobs)}")
+        blobs = list(pool.map(get, rows))
+    failed = [(r["noto_file"], b) for r, b in zip(rows, blobs)
+              if isinstance(b, Exception)]
+    if failed:
+        for name, ex in failed[:10]:
+            print(f"  failed: {name}: {ex}")
+        sys.exit(f"ERROR: {len(failed)} downloads failed. Nothing was "
+                 "changed; run it again.")
+    # The license file is kept by hand. Upstream's root LICENSE is the font
+    # license (OFL); the one that covers the images sits in their folder.
+    notice = fetch(f"{base}{NOTO_SVG_DIR}/LICENSE").strip()
+    if not (ROOT / "LICENSE-noto-emoji.txt").read_bytes().startswith(notice):
+        sys.exit("ERROR: upstream's license notice for the SVG files "
+                 f"({NOTO_SVG_DIR}/LICENSE) is no longer the one at the top "
+                 "of LICENSE-noto-emoji.txt. Nothing was changed. Read the "
+                 "new notice, then bring LICENSE-noto-emoji.txt, NOTICE, "
+                 "metadata.ini and README.md in line with it.")
 
-    lic = urllib.request.urlopen(
-        "https://raw.githubusercontent.com/googlefonts/noto-emoji/"
-        f"{sha}/LICENSE", timeout=30).read()
-    (ROOT / "LICENSE-noto-emoji.txt").write_bytes(lic)
+    try:
+        with open(ROOT / "index.csv", encoding="utf-8", newline="") as f:
+            before = {r["path"] for r in csv.DictReader(f)}
+    except OSError:
+        before = set()
+
+    for collection in COLLECTIONS:
+        shutil.rmtree(ROOT / "collections" / f"noto_emoji_{collection}"
+                      / "svg", ignore_errors=True)
+    for row, blob in zip(rows, blobs):
+        dest = make_core.svg_file(row)
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_bytes(blob)
     (ROOT / "UPSTREAM_COMMIT.txt").write_text(sha + "\n")
+    make_core.write_index(rows)
 
-    for cat, n in counts.items():
-        print(f"  {cat:20s} {n}")
-    print(f"  total {len(jobs)}, failed {len(fails)}")
-    for f in fails[:10]:
-        print("  NG", f)
-    if fails:
-        sys.exit("ERROR: some downloads failed — rerun.")
-
-    import make_index  # same folder; rebuilds index.csv for this commit
-    make_index.main()
-    print("\nDone. Review `git status`, commit, tag, and update the tag "
-          "in install.py and README.md.")
+    now = {r["path"] for r in rows}
+    for label, paths in (("new", now - before), ("gone", before - now)):
+        print(f"{label}: {len(paths)}")
+        for path in sorted(paths):
+            print(f"  {path}")
+    make_core.main()
+    print("Done. Look at `git status`, then go on with \"Maintenance\" in "
+          "README.md.")
 
 
 if __name__ == "__main__":
-    main()
+    main(*sys.argv[1:2])

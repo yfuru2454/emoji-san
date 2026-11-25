@@ -1,0 +1,5 @@
+# The SVG files are Noto's, byte for byte: no line-ending conversion.
+*.svg -text
+# install.py does not need the style file. Leaving it out of the archive of
+# a tag keeps the download small; it is attached to the release instead.
+/styles export-ignore

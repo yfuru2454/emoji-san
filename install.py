@@ -19,6 +19,11 @@ again with another SET at any time:
   - downgrade: removes the emoji that are not in the smaller set
                (maps using those show a "?" marker until you upgrade)
 
+Saving a project embeds the EmOji-san SVGs it uses, so the saved file
+works on any computer (on by default; EMBED=False; in front turns it
+off). This adds a few marked lines to <QGIS3 settings folder>/startup.py,
+which QGIS runs at every start.
+
 Files go to <QGIS3 settings folder>/EmOji-san/<Category>/, which is
 registered as an SVG path (Settings > Options > System > SVG paths).
 index.csv lists every installed emoji with its codepoint, English name,
@@ -51,6 +56,7 @@ SET = _g.get("SET") or ("L" if _g.get("FULL") else None)  # None: see main
 if SET:
     SET = ALIASES.get(str(SET).strip().lower(), str(SET).strip())
 LOCALE = _g.get("LOCALE", None)         # e.g. "de"; default: QGIS's own
+EMBED = bool(_g.get("EMBED", True))     # embed SVGs when saving projects
 ZIP_URL = _g.get("ZIP_URL",             # override for testing/mirrors
                  "https://github.com/%s/archive/refs/tags/%s.zip"
                  % (REPO, TAG))
@@ -182,6 +188,44 @@ def _installed_set(root):
         return None
 
 
+BEGIN = "# >>> EmOji-san: embed EmOji-san SVGs when saving projects >>>"
+END = "# <<< EmOji-san <<<"
+
+
+def _set_embed(root, on):
+    """Add/remove the start-up hook in <QGIS3>/startup.py (the file QGIS
+    runs at every start, for all profiles; it sits next to the EmOji-san
+    folder) and switch it on/off in this session. Returns its path."""
+    try:
+        import qgis.core  # noqa: F401  (only inside QGIS)
+    except ImportError:
+        return None
+    pydir = os.path.dirname(root)
+    startup = os.path.join(pydir, "startup.py")
+    text = ""
+    if os.path.isfile(startup):
+        with open(startup, encoding="utf-8") as f:
+            text = f.read()
+    if BEGIN in text and END in text:  # drop our old block, keep the rest
+        a, rest = text.split(BEGIN, 1)
+        text = a.rstrip("\n") + rest.split(END, 1)[1]
+        text = text.strip("\n") + ("\n" if text.strip() else "")
+    hook = os.path.join(root, "embed_on_save.py")
+    if on:
+        text += ("\n" if text else "") + (
+            "%s\ntry:\n    exec(open(%r, 'rb').read(), "
+            "{'__name__': 'emoji_san_embed'})\nexcept Exception:\n"
+            "    pass\n%s\n" % (BEGIN, hook, END))
+    if text or os.path.isfile(startup):
+        os.makedirs(pydir, exist_ok=True)
+        with open(startup, "w", encoding="utf-8") as f:
+            f.write(text)
+    if os.path.isfile(hook):  # apply now, without restarting QGIS
+        exec(open(hook, "rb").read(), {"__name__": "emoji_san_embed",
+                                       "EMOJI_SAN_EMBED": on})
+    return startup
+
+
 def main():
     global SET
     if not SET:  # no SET given: keep what is installed, else the default
@@ -216,13 +260,14 @@ def main():
                 members[n.split(d, 1)[1]] = n
     for n in names:
         if n.count("/") == 1 and n.endswith(("/LICENSE-noto-emoji.txt",
-                                             "/UPSTREAM_COMMIT.txt")):
+                                             "/UPSTREAM_COMMIT.txt",
+                                             "/embed_on_save.py")):
             members[os.path.basename(n)] = n
 
     # add what is missing (and refresh what is there)
     added = 0
     for rel in sorted(want) + ["LICENSE-noto-emoji.txt",
-                               "UPSTREAM_COMMIT.txt"]:
+                               "UPSTREAM_COMMIT.txt", "embed_on_save.py"]:
         dest = os.path.join(root, *rel.split("/"))
         if rel not in members:
             continue
@@ -249,12 +294,17 @@ def main():
 
     col = _write_index(root, rows)
     newly = _register(root)
+    startup = _set_embed(root, EMBED)
     msg = "EmOji-san %s: %d emoji (+%d added, -%d removed) -> %s" % (
         SET, len(rows), added, removed, root)
     print(msg)
     print("  index.csv%s" % ((" (+ %s)" % col) if col else ""))
     if newly:
         print("  registered as an SVG path (Settings > Options > System)")
+    if startup:
+        print("  saving a project embeds its EmOji-san SVGs: %s"
+              % ("ON (turn off: EMBED=False; in front)" if EMBED else
+                 "OFF (turn on: run again without EMBED=False)"))
     if removed:
         print("  note: maps that used the removed emoji show '?' until you "
               "install a larger set again")

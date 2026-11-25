@@ -17,6 +17,7 @@ Checks, each printed as PASS / FAIL / SKIP:
      missing SVG)
   6. (if imported) the core style symbols are in the style library and
      every one renders from its embedded SVG
+  7. saving a project embeds the EmOji-san SVGs (unless EMBED=False)
 Then, with DEMO = True (the default), adds a small "EmOji-san demo" layer
 around the map centre so you can see the markers on your map.
 
@@ -180,6 +181,23 @@ else:
     report(not broken, "core style: every symbol renders (embedded SVG)",
            ("%d broken, e.g. %s" % (len(broken), broken[:3])) if broken
            else "%d/%d" % (len(names), len(names)))
+
+# 7. embed-on-save hook (on by default; EMBED=False turns it off) -----------
+startup = os.path.join(os.path.dirname(root), "startup.py")
+marker = "# >>> EmOji-san: embed EmOji-san SVGs when saving projects >>>"
+has_block = False
+if os.path.isfile(startup):
+    with open(startup, encoding="utf-8") as f:
+        has_block = marker in f.read()
+import builtins
+active = getattr(builtins, "_emoji_san_embed_fn", None) is not None
+if not has_block and not active:
+    report(None, "embed SVGs when saving projects", "off (EMBED=False)")
+else:
+    report(has_block and active, "embed SVGs when saving projects",
+           "startup.py=%s, active now=%s%s" % (
+               has_block, active, "" if has_block and active else
+               " -> run install.py again (or restart QGIS)"))
 
 # demo layer ---------------------------------------------------------------
 if DEMO and svgs:

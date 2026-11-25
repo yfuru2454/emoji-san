@@ -15,6 +15,24 @@ profile = os.path.normpath(QgsApplication.qgisSettingsDirPath())
 root = os.path.join(os.path.dirname(os.path.dirname(profile)), "EmOji-san")
 legacy = os.path.join(profile, "svg", "EmOji-san")
 
+# switch off and remove the save hook from <QGIS3>/startup.py
+hook = os.path.join(root, "embed_on_save.py")
+if os.path.isfile(hook):
+    exec(open(hook, "rb").read(), {"__name__": "emoji_san_embed",
+                                   "EMOJI_SAN_EMBED": False})
+startup = os.path.join(os.path.dirname(root), "startup.py")
+BEGIN = "# >>> EmOji-san: embed EmOji-san SVGs when saving projects >>>"
+END = "# <<< EmOji-san <<<"
+if os.path.isfile(startup):
+    with open(startup, encoding="utf-8") as f:
+        text = f.read()
+    if BEGIN in text and END in text:
+        a, rest = text.split(BEGIN, 1)
+        text = (a.rstrip("\n") + rest.split(END, 1)[1]).strip("\n")
+        with open(startup, "w", encoding="utf-8") as f:
+            f.write(text + ("\n" if text else ""))
+        print("Removed the EmOji-san lines from:", startup)
+
 for d in (root, legacy):
     if os.path.isdir(d):
         shutil.rmtree(d)

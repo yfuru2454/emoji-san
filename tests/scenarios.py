@@ -10,9 +10,13 @@ qgis/qgis Docker image:
         qgis/qgis python3 tests/scenarios.py
 
 Run it before tagging a release. It zips the working tree, gives QGIS an
-empty settings folder (Qt's test location, ~/.qttest on Linux and macOS) and
-runs the scripts the way the Python console runs the one-line installer.
-Your own QGIS settings are not touched.
+empty settings folder and runs the scripts the way the Python console runs
+the one-line installer.
+
+The settings folder is Qt's test location (~/.qttest on Linux and macOS),
+not your own. The test stops before doing anything if QGIS keeps its
+settings anywhere else. QGIS leaves a few small files in the test location
+when it closes; that folder can be deleted.
 
 Nothing is downloaded, unless you add --online: then it also fetches the
 emoji names of four languages from Unicode CLDR, the way install.py does.
@@ -20,6 +24,7 @@ emoji names of four languages from Unicode CLDR, the way install.py does.
 import contextlib
 import csv
 import io
+import json
 import os
 import pathlib
 import re
@@ -27,6 +32,8 @@ import shutil
 import sys
 import tempfile
 import unittest.mock
+import urllib.error
+import warnings
 import zipfile
 
 from qgis.core import (QgsApplication, QgsFillSymbol, QgsMarkerSymbol,
@@ -48,14 +55,18 @@ def check(ok, what):
         failures.append(what)
 
 
-def console(script, **options):
-    """Run a script as the Python console would. Returns what it printed
-    and the names it left behind in the console's namespace."""
+def console(source, **options):
+    """Run a script of the repository, or one line as it is typed, the way
+    the Python console would. Returns what it printed and the names it left
+    behind in the console's namespace."""
     ns = {"__name__": "__console__", "__doc__": None}
     ns.update(options)
-    path = str(REPO / script)
-    with open(path, "rb") as f:
-        code = compile(f.read(), path, "exec")
+    if source.endswith(".py"):
+        path = str(REPO / source)
+        with open(path, "rb") as f:
+            code = compile(f.read(), path, "exec")
+    else:
+        code = compile(source, "<console>", "single")
     printed = io.StringIO()
     with contextlib.redirect_stdout(printed):
         exec(code, ns)
@@ -76,6 +87,10 @@ def svg_paths():
 
 
 def main():
+    # The settings folder is emptied before and after, so it has to be the
+    # test folder and nothing else. QGIS_CUSTOM_CONFIG_PATH would send QGIS
+    # to another one.
+    os.environ.pop("QGIS_CUSTOM_CONFIG_PATH", None)
     QStandardPaths.setTestModeEnabled(True)
     QCoreApplication.setOrganizationName("QGIS")
     QCoreApplication.setApplicationName(QgsApplication.QGIS_APPLICATION_NAME)
@@ -83,11 +98,19 @@ def main():
         where = QStandardPaths.AppDataLocation
     except AttributeError:  # Qt 6
         where = QStandardPaths.StandardLocation.AppDataLocation
-    settings = QStandardPaths.writableLocation(where)
+    settings = os.path.normpath(QStandardPaths.writableLocation(where))
+    if "qttest" not in settings:
+        sys.exit("ERROR: Qt's test mode gives %s, which does not look like "
+                 "a test folder. Nothing was touched." % settings)
     shutil.rmtree(settings, ignore_errors=True)
-    app = QgsApplication([], True,
-                         os.path.join(settings, "profiles", "default"))
+    app = QgsApplication([], True)
     app.initQgis()
+    profile = os.path.normpath(QgsApplication.qgisSettingsDirPath())
+    if not profile.startswith(settings + os.sep):
+        app.exitQgis()
+        sys.exit("ERROR: QGIS keeps its settings in %s, not in the test "
+                 "folder %s. Stopped before running anything."
+                 % (profile, settings))
     work = tempfile.mkdtemp(prefix="emoji-san-test-")
     try:
         scenarios(settings, work, "--online" in sys.argv)
@@ -108,27 +131,29 @@ def scenarios(settings, work, online):
     startup = os.path.join(settings, "startup.py")
     print("settings folder: %s" % settings)
 
-    # The ZIP GitHub serves for a tag: everything under one top folder, and
-    # without styles/, which .gitattributes keeps out of it.
-    archive = os.path.join(work, "repo.zip")
+    # The ZIP GitHub serves for a tag: everything under one top folder
+    # named after the tag, and without styles/, which .gitattributes keeps
+    # out of it.
+    readme = (REPO / "README.md").read_text(encoding="utf-8")
+    tag = re.search(r'TAG = "v([0-9.]+)"',
+                    (REPO / "install.py").read_text(encoding="utf-8")).group(1)
+    archive = os.path.join(work, "emoji-san-%s.zip" % tag)
     skip = {".git", ".github", "styles", "__pycache__", "review_core.html"}
     with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as z:
         for path in sorted(REPO.rglob("*")):
             rel = path.relative_to(REPO)
             if path.is_file() and not skip.intersection(rel.parts):
-                z.write(path, "emoji-san-test/%s" % rel.as_posix())
+                z.write(path, "emoji-san-%s/%s" % (tag, rel.as_posix()))
     with open(REPO / "index.csv", encoding="utf-8", newline="") as f:
         index = list(csv.DictReader(f))
     want = {s: sorted(r["path"] for r in index if r["set"] in sets)
             for s, sets in (("S", "S"), ("M", "SM"), ("L", "SML"))}
 
     print("\n0. the repository")
-    readme = (REPO / "README.md").read_text(encoding="utf-8")
-    tag = re.search(r'TAG = "v([0-9.]+)"',
-                    (REPO / "install.py").read_text(encoding="utf-8")).group(1)
     named = set(re.findall(r"emoji-san/v([0-9.]+)/", readme)
                 + re.findall(r"tags/v([0-9.]+)\.zip", readme)
-                + re.findall(r"emoji-san-([0-9.]+)\.zip", readme))
+                + re.findall(r"emoji-san-([0-9.]+)\.zip", readme)
+                + re.findall(r"emoji-san-([0-9.]+)/install", readme))
     check(named == {tag}, "README.md and install.py name the same version "
           "(%s, %s)" % (tag, sorted(named)))
     sizes = ["{:,}".format(len(want[s])) for s in "SML"]
@@ -169,11 +194,19 @@ def scenarios(settings, work, online):
         options.setdefault("LOCALE", "en")  # no download of names
         return console("install.py", **options)
 
-    print("\n1. first install")
-    out, left = install()
+    print("\n1. first install, with the line of README.md for a computer "
+          "without internet access")
+    lines = re.findall(r"^ZIP='/path/to/emoji-san-[0-9.]+\.zip'; .+$", readme,
+                       flags=re.M)
+    check(len(lines) == 2 and len(set(lines)) == 1,
+          "README.md has the line, the same in both languages")
+    line = "".join(lines[:1]).replace(
+        "'/path/to/emoji-san-%s.zip'" % tag, repr(archive))
+    out, left = console("LOCALE='en'; " + line)  # no download of names
     check(svgs(root) == want["S"], "the S set is installed (%d files)"
           % len(want["S"]))
-    check(not left, "nothing is left in the console's namespace %s" % left)
+    check(left == ["zipfile"], "only the module that line imports is left "
+          "in the console's namespace %s" % left)
     check(any(os.path.normpath(p) == root for p in svg_paths())
           and any(os.path.normpath(p) == root
                   for p in QgsApplication.svgPaths()),
@@ -205,7 +238,7 @@ def scenarios(settings, work, online):
     out, _ = install(SET="M")
     check(svgs(root) == want["M"] and "-0 removed" in out,
           "SET='M' adds up to M (%d files)" % len(want["M"]))
-    out, _ = install()
+    out, _ = install(ZIP=pathlib.Path(archive))
     check(svgs(root) == want["M"], "without SET, M stays")
     out, _ = install(SET="L")
     check(svgs(root) == want["L"], "SET='L' adds up to L (%d files)"
@@ -256,7 +289,11 @@ def scenarios(settings, work, online):
     check(text.startswith("# my own start-up code\nMY_SETTING = 1\n")
           and text.count(BEGIN) == 1 and "embed_on_save.py" in text,
           "EMBED=True adds the lines to startup.py, after the user's own")
-    compile(text, startup, "exec")
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        exec(compile(text, startup, "exec"), {"__name__": "startup"})
+    check(not caught, "startup.py runs as QGIS runs it at a start, without "
+          "a Python warning %s" % [str(w.message) for w in caught])
     check("on save: on" in out, "the report says it is on")
     saved = save_project(root, os.path.join(work, "on.qgs"))
     check(saved["ours"] == 0 and saved["embedded"] == 4,
@@ -270,6 +307,12 @@ def scenarios(settings, work, online):
     with open(startup, encoding="utf-8") as f:
         check(f.read() == text, "without EMBED it stays on, startup.py is "
               "not rewritten")
+    with open(startup, "w", encoding="utf-8") as f:  # as an older release
+        f.write(text.replace("embed_on_save.py", "old/embed_on_save.py"))
+    install()
+    with open(startup, encoding="utf-8") as f:
+        check(f.read() == text, "lines written by an older release are "
+              "brought up to date")
     out, _ = install(EMBED=False)
     with open(startup, encoding="utf-8") as f:
         check(f.read() == "# my own start-up code\nMY_SETTING = 1\n",
@@ -282,32 +325,104 @@ def scenarios(settings, work, online):
     with open(startup, encoding="utf-8") as f:
         check(f.read().startswith(BEGIN), "startup.py is created if needed")
 
+    print("\n8. emoji names from Unicode CLDR")
+
+    def cldr(files, status=404):
+        """A stand-in for urlopen that serves these CLDR files and answers
+        every other request with an HTTP error."""
+        def urlopen(url, timeout=None):
+            for name, content in files.items():
+                if url.endswith(name):
+                    return io.BytesIO(json.dumps(content).encode("utf-8"))
+            raise urllib.error.HTTPError(url, status, "status %d" % status,
+                                         {}, io.BytesIO())
+        return urlopen
+
+    def names(*pairs):
+        return {"annotations": {"annotations": {
+            emoji: {"tts": [name]} for emoji, name in pairs}}}
+
+    def index_csv():
+        with open(os.path.join(root, "index.csv"), encoding="utf-8",
+                  newline="") as f:
+            return {r["path"]: r for r in csv.DictReader(f)}
+
+    def no_network(url, timeout=None):
+        raise urllib.error.URLError("no network in this test")
+
+    parents = {"supplemental": {"parentLocales": {"parentLocale": {
+        "es-MX": "es-419"}}}}
+    # as CLDR has it: a regional file holds only what differs from its
+    # parent, and most emoji are listed without U+FE0F
+    spanish = {
+        "supplemental/parentLocales.json": parents,
+        "/annotations/es/annotations.json": names(
+            ("\U0001F68C", "autobus"), ("\u2615", "bebida caliente"),
+            ("\u2668", "aguas termales")),
+        "/annotations/es-419/annotations.json": names(
+            ("\U0001F68C", "bus")),
+        "/annotations/es-MX/annotations.json": names(
+            ("\u2615", "cafe")),
+    }
+    with unittest.mock.patch("urllib.request.urlopen", cldr(spanish)):
+        out, _ = install(LOCALE="es_MX")
+    listed = index_csv()
+    check("(+ name_es-MX)" in out
+          and listed["Travel and Places/bus.svg"].get("name_es-MX") == "bus"
+          and listed["Food and Drink/hot_beverage.svg"]["name_es-MX"]
+          == "cafe"
+          and listed["Travel and Places/hot_springs.svg"]["name_es-MX"]
+          == "aguas termales",
+          "es_MX takes the names of es, then es-419, then es-MX")
+    for urlopen, said, what in (
+            (cldr({"supplemental/parentLocales.json": parents}),
+             "has no emoji names", "a language CLDR does not have"),
+            (cldr({"supplemental/parentLocales.json": parents}, 503),
+             "HTTPError", "a server error"),
+            (no_network, "URLError", "no network")):
+        with unittest.mock.patch("urllib.request.urlopen", urlopen):
+            out, _ = install(LOCALE="xx")
+        check("no second name column" in out and said in out
+              and not any(c.startswith("name_") for c in next(iter(
+                  index_csv().values())))
+              and svgs(root) == want["M"],
+              "%s: no second name column, and the report says why" % what)
     if online:
-        print("\n7b. names from Unicode CLDR (downloads)")
         for locale, column in (("ja", "name_ja"), ("es_MX", "name_es-MX"),
                                ("nb", "name_no"), ("zh_TW", "name_zh-Hant")):
             install(SET="L", LOCALE=locale)
-            with open(os.path.join(root, "index.csv"), encoding="utf-8",
-                      newline="") as f:
-                named = [r.get(column) for r in csv.DictReader(f)]
+            named = [r.get(column) for r in index_csv().values()]
             check(len(named) == len(want["L"]) and all(named),
-                  "LOCALE=%r gives every emoji a name in %s"
+                  "downloaded: LOCALE=%r gives every emoji a name in %s"
                   % (locale, column))
         install(SET="M", LOCALE="en")
 
-    print("\n8. check_install.py and diagnose.py")
+    print("\n9. check_install.py and diagnose.py")
     style = QgsStyle.defaultStyle()
     style.importXml(str(REPO / "styles" / "emoji_san_core.xml"))
     out, left = console("tests/check_install.py")
     check("Result: ALL GOOD" in out and "[FAIL]" not in out, "check passes")
-    check(out.count("[PASS]") == 6, "six checks pass, among them the "
-          "imported symbols and the embedding")
+    check(out.count("[PASS]") == 6 and "all draw" in out
+          and "of another release" not in out, "six checks pass, among "
+          "them the imported symbols and the embedding")
     check(not left, "nothing is left in the console's namespace %s" % left)
     check(len(QgsProject.instance().mapLayersByName("EmOji-san demo")) == 1,
           "the demo layer is added")
     QgsProject.instance().clear()
     out, _ = console("tests/check_install.py", DEMO=False)
     check(not QgsProject.instance().mapLayers(), "DEMO=False adds no layer")
+    # a style file in which the first symbol has the drawing of the second
+    xml = (REPO / "styles" / "emoji_san_core.xml").read_text(encoding="utf-8")
+    drawings = re.findall(r'v="(base64:[^"]+)"', xml)
+    other = os.path.join(work, "other_release.xml")
+    with open(other, "w", encoding="utf-8") as f:
+        f.write(xml.replace(drawings[0], drawings[1], 1))
+    style.importXml(other)
+    out, _ = console("tests/check_install.py", DEMO=False)
+    check("in 1 of them the drawing is not that of the installed file" in out
+          and "Result: ALL GOOD" in out, "check points out a symbol from "
+          "the style file of another release")
+    style.importXml(str(REPO / "styles" / "emoji_san_core.xml"))
     with unittest.mock.patch("os.path.expanduser",
                              lambda path: path.replace("~", work)):
         out, left = console("tests/diagnose.py", BUDGET=5)
@@ -315,7 +430,8 @@ def scenarios(settings, work, online):
           and os.path.isfile(os.path.join(work, "emoji-san-diagnose.txt")),
           "diagnose runs and saves its report")
 
-    print("\n9. the EmOji-san folder of another QGIS version is registered")
+    print("\n10. the EmOji-san folder of another QGIS version is "
+          "registered")
     other = os.path.join(work, "QGIS3", "EmOji-san")
     shutil.copytree(root, other)
     console("uninstall.py")
@@ -336,7 +452,7 @@ def scenarios(settings, work, online):
         check(f.read().startswith(BEGIN) and "on save: on" in out,
               "embedding on save is kept as well")
 
-    print("\n10. uninstall")
+    print("\n11. uninstall")
     install(EMBED=True)
     mine = os.path.join(root, "Mine", "own.svg")
     os.makedirs(os.path.dirname(mine))

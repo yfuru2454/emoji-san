@@ -12,8 +12,9 @@ Choose a size (the QGIS console takes ONE line, so join with ";"):
     SET='M'; import urllib.request as u; exec(...)   # M: 1,109
     SET='L'; import urllib.request as u; exec(...)   # L: 1,595
 
-The sets nest (S < M < L), so you can run it again with another SET at
-any time:
+Without SET, the first install is S and later runs keep the size you
+have (they just update it). The sets nest (S < M < L), so you can run it
+again with another SET at any time:
   - upgrade:   adds the missing emoji, keeps everything you have
   - downgrade: removes the emoji that are not in the smaller set
                (maps using those show a "?" marker until you upgrade)
@@ -46,8 +47,9 @@ ALIASES = {"s": "S", "basic": "S", "lite": "S", "small": "S",
 
 # --- options (set as variables before exec'ing, if you like) ----------
 _g = globals()
-SET = str(_g.get("SET") or ("L" if _g.get("FULL") else DEFAULT_SET))
-SET = ALIASES.get(SET.strip().lower(), SET.strip())
+SET = _g.get("SET") or ("L" if _g.get("FULL") else None)  # None: see main
+if SET:
+    SET = ALIASES.get(str(SET).strip().lower(), str(SET).strip())
 LOCALE = _g.get("LOCALE", None)         # e.g. "de"; default: QGIS's own
 ZIP_URL = _g.get("ZIP_URL",             # override for testing/mirrors
                  "https://github.com/%s/archive/refs/tags/%s.zip"
@@ -169,7 +171,21 @@ def _write_index(root, rows):
     return col
 
 
+def _installed_set(root):
+    """The size currently installed (from its index.csv), or None."""
+    try:
+        with open(os.path.join(root, "index.csv"), encoding="utf-8") as f:
+            got = {r.get("set") for r in csv.DictReader(f)}
+        got = [x for x in SETS if x in got]
+        return got[-1] if got else None
+    except OSError:
+        return None
+
+
 def main():
+    global SET
+    if not SET:  # no SET given: keep what is installed, else the default
+        SET = _installed_set(_paths()[0]) or DEFAULT_SET
     if SET not in SETS:
         print("EmOji-san: unknown SET %r — use 'S', 'M' or 'L'" % SET)
         return

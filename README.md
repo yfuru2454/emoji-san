@@ -34,13 +34,15 @@ Google Noto Emoji, installed with one line in the Python console.
 | `M` | 1,109 | S + all of Activities, Animals and Nature, Food and Drink, Objects, Symbols, Travel and Places |
 | `L` | 1,595 | M + all faces, people and 8 generic flags |
 
-- Put `SET='M';` or `SET='L';` in front of the same line. The console
-  only accepts one line, so keep it on one line:
+- Put `SET='S';`, `SET='M';` or `SET='L';` in front of the same line.
+  The console only accepts one line, so keep it on one line:
 
   ```python
   SET='M'; import urllib.request as u; exec(u.urlopen('https://raw.githubusercontent.com/yfuru2454/emoji-san/v1.0.0/install.py').read())
   ```
 
+- Without `SET`: the first install is S; running it again keeps the size
+  you have and just updates it.
 - Run it again with another set at any time:
   - Upgrade (e.g. S → M): adds emoji, removes nothing.
   - Downgrade (e.g. L → S): removes the emoji that are not in the
@@ -152,13 +154,14 @@ Google の Noto Emoji を、Pythonコンソールに1行貼るだけでインス
 | `M` | 1,109 | S ＋ Activities、Animals and Nature、Food and Drink、Objects、Symbols、Travel and Places の全部 |
 | `L` | 1,595 | M ＋ 顔・人物の全部と汎用の旗8個 |
 
-- 同じ1行の先頭に `SET='M';` や `SET='L';` を付けます。コンソールは1行しか
-  受け付けないので、1行のまま貼ってください:
+- 同じ1行の先頭に `SET='S';`、`SET='M';`、`SET='L';` のどれかを付けます。
+  コンソールは1行しか受け付けないので、1行のまま貼ってください:
 
   ```python
   SET='M'; import urllib.request as u; exec(u.urlopen('https://raw.githubusercontent.com/yfuru2454/emoji-san/v1.0.0/install.py').read())
   ```
 
+- `SET` を付けない場合: 初回はS。2回目以降は、今のサイズのまま更新します
 - 別のセットでいつでも実行し直せます:
   - アップグレード（例: S → M）: 絵文字を追加するだけで、何も消しません
   - ダウングレード（例: L → S）: 小さいセットにない絵文字を削除します。

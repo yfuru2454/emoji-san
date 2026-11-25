@@ -187,7 +187,8 @@ def _emoji_san_check(ns):
         installed = {r["emoji"]: file_of(r) for r in present}
         other = 0
         for n in names:
-            layer = style.symbol(n).symbolLayer(0)
+            symbol = style.symbol(n)  # kept: its layers go when it goes
+            layer = symbol.symbolLayer(0)
             inside = layer.path() if hasattr(layer, "path") else ""
             if n.split(" ")[0] in installed and inside.startswith("base64:"):
                 with open(installed[n.split(" ")[0]], "rb") as f:

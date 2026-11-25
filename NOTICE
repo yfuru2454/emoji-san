@@ -1,17 +1,28 @@
-This repository redistributes a subset of the SVG emoji artwork from
-Google's Noto Emoji project (https://github.com/googlefonts/noto-emoji),
-licensed under the Apache License, Version 2.0 (see
-LICENSE-noto-emoji.txt). The exact upstream commit is recorded in
-UPSTREAM_COMMIT.txt.
+EmOji-san
+https://github.com/yfuru2454/emoji-san
 
-Modifications made here, per Apache-2.0 section 4(b):
-  - a curated subset of the upstream SVG files is included (skin-tone
-    variants and country flags are omitted);
-  - files are renamed from codepoint names (emoji_u1f3ea.svg) to
-    descriptive names (convenience_store.svg) and organized into
-    category folders, following the gemoji dataset
-    (https://github.com/github/gemoji);
-  - the SVG contents themselves are unmodified.
+Emoji artwork
 
-The installer and build scripts in this repository are separate works,
-licensed under the MIT License (see LICENSE).
+  The SVG files are from Google's Noto Emoji,
+  https://github.com/googlefonts/noto-emoji, folder 2D/svg, at the commit
+  named in UPSTREAM_COMMIT.txt. Copyright 2013 Google, Inc. Licensed under
+  the Apache License, Version 2.0; LICENSE-noto-emoji.txt has the notice of
+  that folder (2D/svg/LICENSE) and the text of the license.
+
+  What EmOji-san changed (Apache License 2.0, section 4b):
+  - It includes part of the files. Skin-tone variants are left out, and
+    country flags are not in that folder.
+  - It renamed the files from code points (emoji_u1f3ea.svg) to names
+    (convenience_store.svg) and sorted them into one folder per category.
+  - It did not change the content of any SVG file.
+
+Names and categories
+
+  The file names, the English names in index.csv and the categories follow
+  gemoji, https://github.com/github/gemoji. Copyright (c) 2019 GitHub, Inc.
+  MIT License.
+
+Scripts
+
+  The installer and the other scripts are a separate work.
+  Copyright (c) 2026 yfuru2454. MIT License; see LICENSE in the repository.

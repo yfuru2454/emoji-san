@@ -1,0 +1,5 @@
+review_core.html
+__pycache__/
+*.pyc
+qgis_profile_svg_test/
+.DS_Store

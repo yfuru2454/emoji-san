@@ -1,0 +1,200 @@
+convenience_store	Travel and Places
+department_store	Travel and Places
+bank	Travel and Places
+hospital	Travel and Places
+hotel	Travel and Places
+school	Travel and Places
+post_office	Travel and Places
+japanese_post_office	Travel and Places
+office_building	Travel and Places
+house	Travel and Places
+factory	Travel and Places
+church	Travel and Places
+mosque	Travel and Places
+synagogue	Travel and Places
+hindu_temple	Travel and Places
+shinto_shrine	Travel and Places
+japanese_castle	Travel and Places
+castle	Travel and Places
+classical_building	Travel and Places
+stadium	Travel and Places
+tent	Travel and Places
+fountain	Travel and Places
+tokyo_tower	Travel and Places
+ferris_wheel	Travel and Places
+construction	Travel and Places
+playground_slide	Travel and Places
+bus	Travel and Places
+tram	Travel and Places
+taxi	Travel and Places
+automobile	Travel and Places
+delivery_truck	Travel and Places
+bicycle	Travel and Places
+motorcycle	Travel and Places
+station	Travel and Places
+metro	Travel and Places
+bullet_train	Travel and Places
+train	Travel and Places
+airplane	Travel and Places
+small_airplane	Travel and Places
+helicopter	Travel and Places
+ferry	Travel and Places
+ship	Travel and Places
+sailboat	Travel and Places
+anchor	Travel and Places
+fuel_pump	Travel and Places
+police_car	Travel and Places
+fire_engine	Travel and Places
+ambulance	Travel and Places
+mount_fuji	Travel and Places
+mountain	Travel and Places
+volcano	Travel and Places
+beach_with_umbrella	Travel and Places
+hot_springs	Travel and Places
+high_voltage	Travel and Places
+fork_and_knife_with_plate	Food and Drink
+steaming_bowl	Food and Drink
+sushi	Food and Drink
+rice_ball	Food and Drink
+hamburger	Food and Drink
+pizza	Food and Drink
+hot_beverage	Food and Drink
+beer_mug	Food and Drink
+wine_glass	Food and Drink
+cocktail_glass	Food and Drink
+sake	Food and Drink
+bread	Food and Drink
+birthday_cake	Food and Drink
+ice_cream	Food and Drink
+bento_box	Food and Drink
+tropical_drink	Food and Drink
+cherry_blossom	Animals and Nature
+maple_leaf	Animals and Nature
+deciduous_tree	Animals and Nature
+evergreen_tree	Animals and Nature
+palm_tree	Animals and Nature
+sunflower	Animals and Nature
+dog_face	Animals and Nature
+cat_face	Animals and Nature
+horse_face	Animals and Nature
+cow_face	Animals and Nature
+fish	Animals and Nature
+bird	Animals and Nature
+paw_prints	Animals and Nature
+spouting_whale	Animals and Nature
+soccer_ball	Activities
+baseball	Activities
+basketball	Activities
+tennis	Activities
+flag_in_hole	Activities
+skis	Activities
+fishing_pole	Activities
+performing_arts	Activities
+artist_palette	Activities
+video_game	Activities
+camera	Objects
+books	Objects
+graduation_cap	Objects
+bed	Objects
+toilet	Objects
+pill	Objects
+syringe	Objects
+stethoscope	Objects
+hammer_and_wrench	Objects
+scissors	Objects
+shopping_cart	Objects
+shopping_bags	Objects
+telephone	Objects
+musical_note	Objects
+fire_extinguisher	Objects
+wastebasket	Objects
+warning	Symbols
+no_entry	Symbols
+prohibited	Symbols
+wheelchair_symbol	Symbols
+restroom	Symbols
+atm_sign	Symbols
+information	Symbols
+p_button	Symbols
+potable_water	Symbols
+recycling_symbol	Symbols
+children_crossing	Symbols
+sos_button	Symbols
+cinema	Symbols
+fire	Travel and Places
+circus_tent	Travel and Places
+red_paper_lantern	Objects
+hiking_boot	Objects
+running_shoe	Objects
+ring_buoy	Travel and Places
+water_wave	Travel and Places
+canoe	Travel and Places
+bathtub	Objects
+lotus	Animals and Nature
+white_cane	Objects
+snowflake	Travel and Places
+trophy	Activities
+balloon	Activities
+tractor	Travel and Places
+round_pushpin	Objects
+compass	Travel and Places
+package	Objects
+key	Objects
+locked	Objects
+money_bag	Objects
+umbrella	Travel and Places
+chair	Objects
+placard	Objects
+microscope	Objects
+laptop	Objects
+grinning_face	Smileys and Emotion
+smiling_face_with_smiling_eyes	Smileys and Emotion
+smiling_face_with_heart_eyes	Smileys and Emotion
+star_struck	Smileys and Emotion
+face_savoring_food	Smileys and Emotion
+smiling_face_with_sunglasses	Smileys and Emotion
+thinking_face	Smileys and Emotion
+neutral_face	Smileys and Emotion
+slightly_smiling_face	Smileys and Emotion
+confused_face	Smileys and Emotion
+disappointed_face	Smileys and Emotion
+crying_face	Smileys and Emotion
+loudly_crying_face	Smileys and Emotion
+angry_face	Smileys and Emotion
+enraged_face	Smileys and Emotion
+face_screaming_in_fear	Smileys and Emotion
+face_with_medical_mask	Smileys and Emotion
+face_with_thermometer	Smileys and Emotion
+nauseated_face	Smileys and Emotion
+sleeping_face	Smileys and Emotion
+partying_face	Smileys and Emotion
+face_with_tears_of_joy	Smileys and Emotion
+pile_of_poo	Smileys and Emotion
+skull	Smileys and Emotion
+ghost	Smileys and Emotion
+robot	Smileys and Emotion
+alien	Smileys and Emotion
+red_heart	Smileys and Emotion
+broken_heart	Smileys and Emotion
+hundred_points	Smileys and Emotion
+collision	Smileys and Emotion
+zzz	Smileys and Emotion
+speech_balloon	Smileys and Emotion
+thumbs_up	People and Body
+thumbs_down	People and Body
+ok_hand	People and Body
+waving_hand	People and Body
+clapping_hands	People and Body
+folded_hands	People and Body
+handshake	People and Body
+flexed_biceps	People and Body
+eyes	People and Body
+footprints	People and Body
+person	People and Body
+baby	People and Body
+child	People and Body
+older_person	People and Body
+family	People and Body
+couple_with_heart	People and Body
+busts_in_silhouette	People and Body
+pregnant_person	People and Body

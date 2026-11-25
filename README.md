@@ -84,10 +84,16 @@ with the S set as marker symbols. The SVG is inside each symbol, so it works
 without the installer.
 
 1. Download the file.
-2. **Settings → Style Manager → Import/Export → Import Item(s)…**, choose
+2. **Settings → Style Manager → Import / Export → Import Item(s)…**, choose
    the file, then **Select All** and **Import**.
+3. QGIS asks whether to overwrite a symbol, even the first time: after
+   **Select All** it takes each symbol twice. Answer **No to All**.
 
 The symbols are tagged `EmOji-san`.
+
+To replace symbols from an older `emoji_san_core.xml`, delete them in the
+Style Manager first; the tag finds them. Overwriting them on import does
+not last: after a restart, QGIS has the old symbols again.
 
 ## Check and uninstall
 
@@ -130,12 +136,11 @@ install line in QGIS 4 and it gets its own folder, with the same set.
 
 ## Without internet access from QGIS
 
-Download the source ZIP of the release with a browser and take `install.py`
-out of it. Then run this with your own paths (on Windows, write them as
-`r'C:\...'`):
+Download the source ZIP of the release with a browser. Then run this line
+with the path of the ZIP (on Windows, write it as `r'C:\...'`):
 
 ```python
-ZIP='/path/to/emoji-san-1.0.0.zip'; exec(open('/path/to/install.py', 'rb').read())
+ZIP='/path/to/emoji-san-1.0.0.zip'; import zipfile; exec(zipfile.ZipFile(ZIP).read('emoji-san-1.0.0/install.py'))
 ```
 
 ## What is installed
@@ -145,6 +150,9 @@ ZIP='/path/to/emoji-san-1.0.0.zip'; exec(open('/path/to/install.py', 'rb').read(
   `%APPDATA%\QGIS\QGIS3`, on macOS
   `~/Library/Application Support/QGIS/QGIS3`, on Linux
   `~/.local/share/QGIS/QGIS3` (`QGIS4` for QGIS 4).
+- All user profiles share that folder, but each profile has its own list of
+  SVG paths. To use the emoji in another profile, run the install line
+  there too. It adds no files and registers the folder.
 - The file names are the English emoji names, like `convenience_store.svg`.
   The search box of the SVG browser finds them.
 - `index.csv` in the same folder has one line per emoji: the emoji, its code
@@ -267,8 +275,11 @@ QGIS 3.34、3.44、4.4で動作を確認しています。
 
 1. ファイルをダウンロードします。
 2. **設定 → スタイルマネージャ → インポートとエクスポート → アイテムのインポート...** でファイルを選び、**すべて選択**、**インポート** の順に押します。
+3. シンボルを上書きするか聞かれます。初めてのインポートでも聞かれます（**すべて選択** のあと、QGISは各シンボルを2回ずつ取り込むためです）。**全ていいえ**（No to All）を選びます。
 
 シンボルには`EmOji-san`というタグが付きます。
+
+以前の`emoji_san_core.xml`から入れたシンボルを新しいものに替えるときは、先にスタイルマネージャで古いシンボルを削除します（タグで絞り込めます）。インポート時の上書きは、QGISを再起動すると元のシンボルに戻ります。
 
 ## 確認とアンインストール
 
@@ -302,15 +313,16 @@ SVGブラウザは開くたびに、**設定 → オプション → システ�
 
 ## QGISからインターネットに出られないとき
 
-リリースのソースのZIPをブラウザでダウンロードして、中の`install.py`を取り出します。次の行のパスを自分のものに書き換えて実行します（Windowsでは`r'C:\...'`の形で書きます）。
+リリースのソースのZIPをブラウザでダウンロードします。次の行のパスをそのZIPの場所に書き換えて実行します（Windowsでは`r'C:\...'`の形で書きます）。
 
 ```python
-ZIP='/path/to/emoji-san-1.0.0.zip'; exec(open('/path/to/install.py', 'rb').read())
+ZIP='/path/to/emoji-san-1.0.0.zip'; import zipfile; exec(zipfile.ZipFile(ZIP).read('emoji-san-1.0.0/install.py'))
 ```
 
 ## インストールされるもの
 
 - QGISの設定フォルダ（`profiles`があるフォルダ）の中の`EmOji-san/<カテゴリ>/<名前>.svg`。設定フォルダは、Windowsでは`%APPDATA%\QGIS\QGIS3`、macOSでは`~/Library/Application Support/QGIS/QGIS3`、Linuxでは`~/.local/share/QGIS/QGIS3`です（QGIS 4は`QGIS4`）。
+- このフォルダはすべてのユーザープロファイルで共用されますが、SVGパスの一覧はプロファイルごとに別です。別のプロファイルでも使うときは、そのプロファイルでもインストールの行を実行します。ファイルは増えず、フォルダが登録されます。
 - ファイル名は`convenience_store.svg`のような絵文字の英語名です。SVGブラウザの検索欄で探せます。
 - 同じフォルダの`index.csv`は、絵文字1個につき1行の一覧です。絵文字、コードポイント、英語名、QGISの表示言語での名前、カテゴリ、パス、セット、Notoでのファイル名が入っています。スクリプトやAIアシスタントが絵文字を探すのに使えます。インストールの行の先頭に`LOCALE='de';`を付けると、名前の言語を変えられます。
 

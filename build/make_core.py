@@ -22,22 +22,29 @@ the S set, the next time they run the installer. Maps that use it then show
 "?". Adding is always safe.
 """
 import base64
+import contextlib
 import csv
 import html
+import os
 import pathlib
+import shutil
 import sys
+import tempfile
 from xml.sax.saxutils import escape
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SIZE_MM = "5"
 INDEX_FIELDS = ["emoji", "codepoint", "name", "category", "collection",
                 "path", "noto_file", "set"]
+OUTPUTS = (pathlib.Path("index.csv"),
+           pathlib.Path("styles/emoji_san_core.xml"),
+           pathlib.Path("review_core.html"))
 
 
-def read_core():
+def read_core(root):
     """[(path, note), ...] from core_list.txt, in the order of the file."""
     entries = []
-    text = (ROOT / "core_list.txt").read_text(encoding="utf-8")
+    text = (root / "core_list.txt").read_text(encoding="utf-8")
     for line in text.splitlines():
         entry, _, note = line.partition("#")
         if entry.strip():
@@ -45,16 +52,108 @@ def read_core():
     return entries
 
 
-def write_index(rows):
-    with open(ROOT / "index.csv", "w", newline="", encoding="utf-8") as f:
+def read_index(root):
+    with (root / "index.csv").open(encoding="utf-8", newline="") as f:
+        reader = csv.DictReader(f)
+        if reader.fieldnames != INDEX_FIELDS:
+            raise ValueError("index.csv has unexpected columns")
+        return list(reader)
+
+
+def write_index(root, rows):
+    with (root / "index.csv").open("w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=INDEX_FIELDS, lineterminator="\n")
         w.writeheader()
         w.writerows(rows)
 
 
-def svg_file(row):
-    return (ROOT / "collections" / f"noto_emoji_{row['collection']}" / "svg"
-            / row["path"])
+def svg_path(row):
+    return (pathlib.Path("collections") / f"noto_emoji_{row['collection']}"
+            / "svg" / row["path"])
+
+
+@contextlib.contextmanager
+def build_workspace(root):
+    """Keep both maintainer commands from publishing at the same time."""
+    lock = root / ".emoji-san-build.lock"
+    try:
+        lock.mkdir()
+    except FileExistsError as error:
+        raise RuntimeError(
+            f"Another build holds {lock}. If it was interrupted, "
+            "check the repository before removing the lock."
+        ) from error
+    try:
+        with tempfile.TemporaryDirectory(prefix=".emoji-san-build-",
+                                         dir=root) as directory:
+            yield pathlib.Path(directory)
+    finally:
+        lock.rmdir()
+
+
+def publish(root, staging, paths):
+    """Replace changed build files and restore them if a replacement fails."""
+    replacements = []
+    for path in paths:
+        source, target = staging / path, root / path
+        if not source.is_file():
+            raise ValueError(f"Missing staged build output: {path}")
+        if target.resolve() != target or (
+                target.exists() and not target.is_file()):
+            raise ValueError(f"Cannot replace build output: {target}")
+        if not target.is_file() or source.read_bytes() != target.read_bytes():
+            replacements.append(path)
+
+    if not replacements:
+        return
+    backups = pathlib.Path(tempfile.mkdtemp(prefix=".emoji-san-backup-",
+                                           dir=root))
+    attempted, created = [], []
+    try:
+        for path in replacements:
+            target, backup = root / path, backups / path
+            if target.is_file():
+                backup.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(target, backup)
+        for path in replacements:
+            target = root / path
+            missing = []
+            parent = target.parent
+            while not parent.exists():
+                missing.append(parent)
+                parent = parent.parent
+            for parent in reversed(missing):
+                parent.mkdir()
+                created.append(parent)
+            attempted.append(path)
+            os.replace(staging / path, target)
+    except BaseException as error:
+        rollback_errors = []
+        for path in reversed(attempted):
+            if (staging / path).exists():
+                continue  # this replacement did not happen
+            target, backup = root / path, backups / path
+            try:
+                if backup.is_file():
+                    os.replace(backup, target)
+                else:
+                    target.unlink()
+            except OSError as rollback_error:
+                rollback_errors.append(str(rollback_error))
+        for parent in reversed(created):
+            try:
+                parent.rmdir()
+            except OSError as rollback_error:
+                rollback_errors.append(str(rollback_error))
+        if rollback_errors:
+            raise RuntimeError(
+                f"Build failed and could not be fully restored. "
+                f"Backups remain in {backups}: {'; '.join(rollback_errors)}"
+            ) from error
+        shutil.rmtree(backups)
+        raise
+    else:
+        shutil.rmtree(backups)
 
 
 def attr(value):
@@ -109,41 +208,48 @@ function tg(el){el.classList.toggle('off');upd()}upd();
 </script></body></html>"""
 
 
-def main():
-    with open(ROOT / "index.csv", encoding="utf-8", newline="") as f:
-        rows = list(csv.DictReader(f))
+def build_core(source, output, rows):
+    """Build the CSV, style XML and review page in an isolated directory."""
     by_path = {r["path"]: r for r in rows}
-    core = read_core()
+    if len(by_path) != len(rows):
+        raise ValueError("index.csv contains duplicate SVG paths")
+    core = read_core(source)
     paths = [p for p, _ in core]
+    if not paths:
+        raise ValueError("core_list.txt must contain at least one emoji")
     unknown = [p for p in paths if p not in by_path]
     if unknown:
-        sys.exit(f"ERROR: core_list.txt names emoji that index.csv does not "
-                 f"have: {unknown}. Correct core_list.txt and run "
-                 "build/make_core.py again.")
+        raise ValueError(
+            f"core_list.txt names emoji that index.csv does not have: "
+            f"{unknown}. Correct core_list.txt and run build/make_core.py."
+        )
     twice = sorted({p for p in paths if paths.count(p) > 1})
     if twice:
-        sys.exit(f"ERROR: listed twice in core_list.txt: {twice}")
-    missing = [r["path"] for r in rows if not svg_file(r).exists()]
+        raise ValueError(f"Listed twice in core_list.txt: {twice}")
+    missing = [r["path"] for r in rows if not (source / svg_path(r)).is_file()]
     if missing:
-        sys.exit(f"ERROR: {len(missing)} SVG files named in index.csv are "
-                 f"missing, e.g. {missing[:3]}. Run update_from_upstream.py.")
+        raise ValueError(
+            f"{len(missing)} SVG files named in index.csv are missing, "
+            f"e.g. {missing[:3]}. Run build/update_from_upstream.py."
+        )
 
     # 1) index.csv: which set each emoji belongs to
     in_core = set(paths)
     for r in rows:
         r["set"] = ("S" if r["path"] in in_core else
                     "M" if r["collection"] == "map" else "L")
-    write_index(rows)
-
     # 2) the style file. A symbol is named "<emoji> <file name>", e.g.
-    # "✈️ airplane": a bare "airplane" or "bank" could collide with a symbol
-    # the user already has, and QGIS then asks whether to overwrite it.
-    commit = (ROOT / "UPSTREAM_COMMIT.txt").read_text().strip()
+    # "✈️ airplane". A bare "airplane" or "bank" could collide with a
+    # user's existing symbol and prompt for an overwrite.
+    commit = (source / "UPSTREAM_COMMIT.txt").read_text(
+        encoding="utf-8").splitlines()[0]
     symbols = []
+    encoded = {}
     for path in paths:
         row = by_path[path]
         folder, name = path[:-len(".svg")].split("/")
-        b64 = base64.b64encode(svg_file(row).read_bytes()).decode()
+        b64 = base64.b64encode((source / svg_path(row)).read_bytes()).decode()
+        encoded[path] = b64
         symbols.append(symbol_xml(f"{row['emoji']} {name}",
                                   f"EmOji-san,Noto Emoji,{folder}", b64))
     xml = ("<!DOCTYPE qgis_style>\n"
@@ -157,7 +263,7 @@ def main():
            '<qgis_style version="2">\n<symbols>\n'
            + "\n".join(symbols)
            + "\n</symbols>\n<colorramps/>\n</qgis_style>\n")
-    out = ROOT / "styles" / "emoji_san_core.xml"
+    out = output / OUTPUTS[1]
     out.parent.mkdir(exist_ok=True)
     out.write_text(xml, encoding="utf-8")
 
@@ -166,7 +272,7 @@ def main():
     width = max(len(p) for p in paths) - len(".svg") + 2
     for path, note in core:
         folder, name = path[:-len(".svg")].split("/")
-        b64 = base64.b64encode(svg_file(by_path[path]).read_bytes()).decode()
+        b64 = encoded[path]
         line = f"{folder}/{name}".ljust(width) + f"# {note}"
         if folder not in cards:
             sections.append(folder)
@@ -180,14 +286,23 @@ def main():
         f'<h2>{html.escape(s)} <span class="cnt" data-cat="{html.escape(s)}">'
         f'</span></h2><div class="grid">{"".join(cards[s])}</div>'
         for s in sections))
-    (ROOT / "review_core.html").write_text(page, encoding="utf-8")
+    (output / OUTPUTS[2]).write_text(page, encoding="utf-8")
+    write_index(output, rows)
 
     counts = {s: sum(r["set"] == s for r in rows) for s in "SML"}
     print(f"sets: S {counts['S']}, M {counts['S'] + counts['M']}, "
           f"L {len(rows)}")
-    print(f"wrote index.csv, styles/emoji_san_core.xml "
-          f"({len(xml) // 1024} KB), review_core.html")
+
+
+def main():
+    with build_workspace(ROOT) as staging:
+        build_core(ROOT, staging, read_index(ROOT))
+        publish(ROOT, staging, OUTPUTS)
+    print("wrote index.csv, styles/emoji_san_core.xml, review_core.html")
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except (OSError, RuntimeError, ValueError) as error:
+        sys.exit(f"ERROR: {error}")

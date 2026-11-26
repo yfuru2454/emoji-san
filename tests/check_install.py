@@ -38,6 +38,7 @@ def _emoji_san_check(ns):
 
     FOLDER = "EmOji-san"
     BEGIN = "# >>> EmOji-san: embed EmOji-san SVGs when saving projects >>>"
+    EMBED_KEY = "emoji-san/embedOnSave"
     demo = bool(ns.pop("DEMO", True))
     results = []
 
@@ -223,14 +224,24 @@ def _emoji_san_check(ns):
         QStandardPaths.writableLocation(where), "startup.py"))
     try:
         with open(startup, encoding="utf-8") as f:
-            in_startup = BEGIN in f.read()
+            startup_text = f.read()
     except (OSError, ValueError):
-        in_startup = False
+        startup_text = ""
+    in_startup = BEGIN in startup_text
     hook = getattr(builtins, "_emoji_san_embed_fn", None)
-    if not in_startup and hook is None:
+    settings = QgsSettings()
+    if EMBED_KEY in startup_text or settings.contains(EMBED_KEY):
+        enabled = settings.value(EMBED_KEY, False, type=bool)
+    else:
+        enabled = in_startup or hook is not None  # older installations
+    if not enabled and hook is None:
         report(None, "embedding on save",
                "off; EMBED=True; in front of the install line switches "
                "it on")
+    elif not enabled:
+        report(False, "embedding on save",
+               "off for this profile, but the save hook is connected; %s "
+               "with EMBED=False; in front" % again)
     else:
         embeds = False
         if hook is not None and sample:

@@ -2,6 +2,8 @@
 
 Color emoji as point markers in QGIS: 🏪 🚌 🏥 ♨️
 
+<img width="432" height="227" alt="image" src="https://github.com/user-attachments/assets/c3a51cfe-4dd8-4339-8f35-9e936d36959d" />
+
 The emoji are Google's Noto Emoji as SVG files. One line in the QGIS Python
 console installs them. It is not a plugin.
 
@@ -256,6 +258,8 @@ Once a year, when Noto Emoji has the new emoji:
 # 日本語
 
 QGISで、カラーの絵文字をポイントのマーカーに使えるようにします: 🏪 🚌 🏥 ♨️
+
+<img width="432" height="227" alt="image" src="https://github.com/user-attachments/assets/c3a51cfe-4dd8-4339-8f35-9e936d36959d" />
 
 絵文字はGoogleのNoto EmojiのSVGです。QGISのPythonコンソールに1行貼るとインストールされます。プラグインではありません。
 

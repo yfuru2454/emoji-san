@@ -525,7 +525,7 @@ def scenarios(settings, work, online, organization):
     check(not QgsSettings().value(EMBED_KEY, False, type=bool)
           and getattr(builtins, "_emoji_san_embed_fn", None) is None,
           "uninstall disables embedding in this profile")
-    check("200 symbols tagged EmOji-san" in out, "the imported symbols are "
+    check("300 symbols tagged EmOji-san" in out, "the imported symbols are "
           "mentioned")
     check(not left, "nothing is left in the console's namespace %s" % left)
     out, _ = console("uninstall.py")

@@ -18,19 +18,19 @@ Tested with QGIS 3.34, 3.44 and 4.4.
 2. Paste this line and press Enter.
 
    ```python
-   import urllib.request as u; exec(u.urlopen('https://github.com/yfuru2454/emoji-san/releases/download/v1.0.0/install.py').read())
+   import urllib.request as u; exec(u.urlopen('https://github.com/yfuru2454/emoji-san/releases/download/v1.1.0/install.py').read())
    ```
 
 3. The console prints this. The folder depends on your system.
 
    ```
-   EmOji-san: getting https://github.com/yfuru2454/emoji-san/releases/download/v1.0.0/emoji_san_data.zip
-   200 emoji installed! Have fun with your maps 😃✨ Love, EmOji-san 👨‍💼
-   EmOji-san S: 200 emoji (+200 added, -0 removed) -> C:\Users\you\AppData\Roaming\QGIS\QGIS3\EmOji-san
+   EmOji-san: getting https://github.com/yfuru2454/emoji-san/releases/download/v1.1.0/emoji_san_data.zip
+   300 emoji installed! Have fun with your maps 😃✨ Love, EmOji-san 👨‍💼
+   EmOji-san S: 300 emoji (+300 added, -0 removed) -> C:\Users\you\AppData\Roaming\QGIS\QGIS3\EmOji-san
      index.csv
      registered as an SVG path (Settings > Options > System)
    Next: Symbology of a point layer > SVG Marker > SVG browser > EmOji-san > a category. Reopen the dialog if it was open.
-   More emoji: SET='M'; in front of the same line (S 200, M 1,109, L 1,595).
+   More emoji: SET='M'; in front of the same line (S 300, M 1,076, L 1,923).
    Sharing a project: embed the SVG in the symbol ("..." > Embed File), or run this again with EMBED=True; in front.
    ```
 
@@ -42,17 +42,17 @@ Tested with QGIS 3.34, 3.44 and 4.4.
 
 | Set | Emoji | Contents |
 |---|---|---|
-| `S` | 200 | The ones that stay readable at marker size. This is what you get if you do not choose. |
-| `M` | 1,109 | S, and the rest of Activities, Animals and Nature, Food and Drink, Objects, Symbols, Travel and Places |
-| `L` | 1,595 | M, and the rest of the faces and people, and 8 flags |
+| `S` | 300 | The ones that stay readable at marker size. This is what you get if you do not choose. |
+| `M` | 1,076 | S, all the faces, and the rest of Activities, Animals and Nature, Food and Drink, Objects, Symbols, Travel and Places, except clocks, zodiac signs, player buttons, clothes, games, musical instruments and the like (`l_only_list.txt`) |
+| `L` | 1,923 | M, and the rest: people and hands, and all the flags, country and subdivision flags included |
 
-No set has skin-tone variants or country flags.
+No set has skin-tone variants.
 
 - To choose a set, put `SET='M';` in front of the line. The console runs one
   line at a time, so keep it on one line.
 
   ```python
-  SET='M'; import urllib.request as u; exec(u.urlopen('https://github.com/yfuru2454/emoji-san/releases/download/v1.0.0/install.py').read())
+  SET='M'; import urllib.request as u; exec(u.urlopen('https://github.com/yfuru2454/emoji-san/releases/download/v1.1.0/install.py').read())
   ```
 
 - Run the line again with another `SET` to switch. A bigger set adds emoji.
@@ -109,7 +109,7 @@ Check the install. The last line it prints should start with
 `DEMO=False;` in front leaves that out.
 
 ```python
-import urllib.request as u; exec(u.urlopen('https://github.com/yfuru2454/emoji-san/releases/download/v1.0.0/check_install.py').read())
+import urllib.request as u; exec(u.urlopen('https://github.com/yfuru2454/emoji-san/releases/download/v1.1.0/check_install.py').read())
 ```
 
 Uninstall. It unregisters EmOji-san and turns off embedding in the current
@@ -120,7 +120,7 @@ left. Once no profile uses the folder, EmOji-san's lines also leave
 file stay in the Style Manager, where you can delete them.
 
 ```python
-import urllib.request as u; exec(u.urlopen('https://github.com/yfuru2454/emoji-san/releases/download/v1.0.0/uninstall.py').read())
+import urllib.request as u; exec(u.urlopen('https://github.com/yfuru2454/emoji-san/releases/download/v1.1.0/uninstall.py').read())
 ```
 
 ## If the SVG browser is slow
@@ -135,7 +135,7 @@ Each time it opens, the SVG browser lists the SVGs of every folder under
 - This line measures where the time goes and prints the `LIKELY CAUSES`:
 
   ```python
-  import urllib.request as u; exec(u.urlopen('https://github.com/yfuru2454/emoji-san/releases/download/v1.0.0/diagnose.py').read())
+  import urllib.request as u; exec(u.urlopen('https://github.com/yfuru2454/emoji-san/releases/download/v1.1.0/diagnose.py').read())
   ```
 
 ## QGIS 3 and QGIS 4
@@ -168,7 +168,7 @@ or inside one top-level folder, whatever that folder is called. If Safari
 unpacks the source ZIP, compress that folder again and use the result.
 
 ```python
-ZIP='/path/to/emoji-san-1.0.0.zip'; LOCALE='en'; exec("from zipfile import ZipFile\nwith ZipFile(console['ZIP']) as archive:\n    names = [n for n in archive.namelist() if n.count('/') <= 1 and n.rsplit('/', 1)[-1] == 'install.py' and not n.startswith(('/', './', '../'))]\n    if len(names) != 1: raise ValueError('Expected one install.py at the ZIP root or inside one folder')\n    code = archive.read(names[0])\nexec(code, console)", {'console': globals()})
+ZIP='/path/to/emoji-san-1.1.0.zip'; LOCALE='en'; exec("from zipfile import ZipFile\nwith ZipFile(console['ZIP']) as archive:\n    names = [n for n in archive.namelist() if n.count('/') <= 1 and n.rsplit('/', 1)[-1] == 'install.py' and not n.startswith(('/', './', '../'))]\n    if len(names) != 1: raise ValueError('Expected one install.py at the ZIP root or inside one folder')\n    code = archive.read(names[0])\nexec(code, console)", {'console': globals()})
 ```
 
 Both lines use English names in `index.csv` and install without connecting
@@ -208,6 +208,10 @@ above, so use one or the other.
   draw them wrong as they are: the hands, for one, come out black. The
   picture is the same, and the other files are unchanged. Details are in
   `NOTICE`.
+- Country and subdivision flags: Noto Emoji's waved flags
+  (`third_party/region-flags`), whose designs are in the public domain or
+  otherwise exempt from copyright. Their license is at the end of
+  `LICENSE-noto-emoji.txt`.
 - File names, English names and categories: [gemoji](https://github.com/github/gemoji),
   MIT License. The license text is in `LICENSE-gemoji.txt`.
 - Scripts: MIT.
@@ -226,7 +230,9 @@ Once a year, when Noto Emoji has the new emoji:
    `--unicode-version` to choose a Unicode release. The build lists new emoji,
    eligible emoji missing from Noto, and old SVGs kept for compatibility.
    Published paths stay the same. Check the new drawings in QGIS. To change
-   the S set, edit `core_list.txt` and run `python3 build/make_core.py`.
+   the S set, edit `core_list.txt` and run `python3 build/make_core.py`;
+   to keep something of the map collection out of M, add it to
+   `l_only_list.txt` the same way.
 2. Change the version in `TAG` in `install.py` and everywhere in this
    README (search for the old number), and correct the numbers in the Sets
    table. Set `CLDR` in `install.py` to the latest release of
@@ -269,19 +275,19 @@ QGIS 3.34、3.44、4.4で動作を確認しています。
 2. 次の1行を貼り付けてEnterを押します。
 
    ```python
-   import urllib.request as u; exec(u.urlopen('https://github.com/yfuru2454/emoji-san/releases/download/v1.0.0/install.py').read())
+   import urllib.request as u; exec(u.urlopen('https://github.com/yfuru2454/emoji-san/releases/download/v1.1.0/install.py').read())
    ```
 
 3. コンソールに次のように表示されます。フォルダの場所は環境によって違います。
 
    ```
-   EmOji-san: getting https://github.com/yfuru2454/emoji-san/releases/download/v1.0.0/emoji_san_data.zip
-   EmOji-san👨‍💼参上❗ 200個の絵文字をお届けしたヨ😃✨ 地図がにぎやかになるネ🗾💕
-   EmOji-san S: 200 emoji (+200 added, -0 removed) -> /Users/you/Library/Application Support/QGIS/QGIS3/EmOji-san
+   EmOji-san: getting https://github.com/yfuru2454/emoji-san/releases/download/v1.1.0/emoji_san_data.zip
+   EmOji-san👨‍💼参上❗ 300個の絵文字をお届けしたヨ😃✨ 地図がにぎやかになるネ🗾💕
+   EmOji-san S: 300 emoji (+300 added, -0 removed) -> /Users/you/Library/Application Support/QGIS/QGIS3/EmOji-san
      index.csv (+ name_ja)
      registered as an SVG path (Settings > Options > System)
    Next: Symbology of a point layer > SVG Marker > SVG browser > EmOji-san > a category. Reopen the dialog if it was open.
-   More emoji: SET='M'; in front of the same line (S 200, M 1,109, L 1,595).
+   More emoji: SET='M'; in front of the same line (S 300, M 1,076, L 1,923).
    Sharing a project: embed the SVG in the symbol ("..." > Embed File), or run this again with EMBED=True; in front.
    ```
 
@@ -291,16 +297,16 @@ QGIS 3.34、3.44、4.4で動作を確認しています。
 
 | セット | 個数 | 中身 |
 |---|---|---|
-| `S` | 200 | マーカーの大きさでも見分けやすいもの。何も指定しなければこれが入ります |
-| `M` | 1,109 | Sと、Activities、Animals and Nature、Food and Drink、Objects、Symbols、Travel and Placesの残り全部 |
-| `L` | 1,595 | Mと、顔・人物の残り全部、旗8個 |
+| `S` | 300 | マーカーの大きさでも見分けやすいもの。何も指定しなければこれが入ります |
+| `M` | 1,076 | Sと、顔の全部と、Activities、Animals and Nature、Food and Drink、Objects、Symbols、Travel and Placesの残り。ただし時計、星座、再生ボタン、服、ゲーム、楽器など地図で使わないもの（`l_only_list.txt`）は除きます |
+| `L` | 1,923 | Mと、残り全部（人物・手と、国旗・地域旗を含むすべての旗） |
 
-どのセットにも、肌の色違いと国旗は入っていません。
+どのセットにも、肌の色違いは入っていません。
 
 - セットを選ぶには、行の先頭に`SET='M';`を付けます。コンソールは1行ずつ実行するので、1行のまま貼ってください。
 
   ```python
-  SET='M'; import urllib.request as u; exec(u.urlopen('https://github.com/yfuru2454/emoji-san/releases/download/v1.0.0/install.py').read())
+  SET='M'; import urllib.request as u; exec(u.urlopen('https://github.com/yfuru2454/emoji-san/releases/download/v1.1.0/install.py').read())
   ```
 
 - 別の`SET`を付けて実行し直すと、セットが切り替わります。大きくすると絵文字が増えます。小さくすると、そのセットにない絵文字は削除され、それを使っていたマーカーは大きいセットに戻すまで`?`になります。別のプロファイルが同じフォルダを使っている場合は、共用のセットが維持され、その理由が表示されます。
@@ -332,13 +338,13 @@ QGIS 3.34、3.44、4.4で動作を確認しています。
 インストールの確認です。最後の行が`Result: ALL GOOD`で始まっていれば問題ありません。絵文字8個のレイヤも地図に追加されます。先頭に`DEMO=False;`を付けると追加されません。
 
 ```python
-import urllib.request as u; exec(u.urlopen('https://github.com/yfuru2454/emoji-san/releases/download/v1.0.0/check_install.py').read())
+import urllib.request as u; exec(u.urlopen('https://github.com/yfuru2454/emoji-san/releases/download/v1.1.0/check_install.py').read())
 ```
 
 アンインストールです。現在のプロファイルの登録を外し、埋め込みを無効にします。別のプロファイルが同じフォルダを使っている間は、インストールしたファイルが残ります。自分で置いたファイルは残り、それらだけが残った場合はSVGパスの登録も維持されます。どのプロファイルもフォルダを使わなくなると、`startup.py`からEmOji-sanの行も消えます。自分で書いた行は残ります。スタイルファイルからインポートしたシンボルはスタイルマネージャから削除できます。
 
 ```python
-import urllib.request as u; exec(u.urlopen('https://github.com/yfuru2454/emoji-san/releases/download/v1.0.0/uninstall.py').read())
+import urllib.request as u; exec(u.urlopen('https://github.com/yfuru2454/emoji-san/releases/download/v1.1.0/uninstall.py').read())
 ```
 
 ## SVGブラウザが遅いとき
@@ -350,7 +356,7 @@ SVGブラウザは開くたびに、**設定 → オプション → システ�
 - 次の行は、どこで時間がかかっているかを測って、`LIKELY CAUSES`として表示します。
 
   ```python
-  import urllib.request as u; exec(u.urlopen('https://github.com/yfuru2454/emoji-san/releases/download/v1.0.0/diagnose.py').read())
+  import urllib.request as u; exec(u.urlopen('https://github.com/yfuru2454/emoji-san/releases/download/v1.1.0/diagnose.py').read())
   ```
 
 ## QGIS 3とQGIS 4
@@ -370,7 +376,7 @@ SHA-256を照合するため、`emoji_san_data.zip`はダウンロードした�
 同じリリースの **Source code (zip)** をダウンロードし、次の行でインストールする方法もあります。ZIP内のPythonコードを実行するため、EmOji-sanのリリースから取得したソースZIPを使ってください。ZIPの直下か、その一つ下のフォルダから`install.py`を探します。フォルダ名は変わっていても構いません。Safariで展開された場合は、そのフォルダを圧縮し直して使えます。
 
 ```python
-ZIP='/path/to/emoji-san-1.0.0.zip'; LOCALE='en'; exec("from zipfile import ZipFile\nwith ZipFile(console['ZIP']) as archive:\n    names = [n for n in archive.namelist() if n.count('/') <= 1 and n.rsplit('/', 1)[-1] == 'install.py' and not n.startswith(('/', './', '../'))]\n    if len(names) != 1: raise ValueError('Expected one install.py at the ZIP root or inside one folder')\n    code = archive.read(names[0])\nexec(code, console)", {'console': globals()})
+ZIP='/path/to/emoji-san-1.1.0.zip'; LOCALE='en'; exec("from zipfile import ZipFile\nwith ZipFile(console['ZIP']) as archive:\n    names = [n for n in archive.namelist() if n.count('/') <= 1 and n.rsplit('/', 1)[-1] == 'install.py' and not n.startswith(('/', './', '../'))]\n    if len(names) != 1: raise ValueError('Expected one install.py at the ZIP root or inside one folder')\n    code = archive.read(names[0])\nexec(code, console)", {'console': globals()})
 ```
 
 どちらの行もインターネットに接続せずにインストールし、`index.csv`に英語名を入れます。あとでQGISの表示言語の名前を追加するには、接続できるときにオンライン用のインストール行をもう一度実行してください。
@@ -389,6 +395,7 @@ ZIP='/path/to/emoji-san-1.0.0.zip'; LOCALE='en'; exec("from zipfile import ZipFi
 ## ライセンス
 
 - 絵文字: [Google Noto Emoji](https://github.com/googlefonts/noto-emoji)、Apache License 2.0。EmOji-sanはSVGファイルの一部を選び、名前を変えてフォルダに分けています。そのままではQGISが正しく描けないファイル（手の絵文字は真っ黒になります）は、見た目を変えずに書き換えています。それ以外のファイルの中身は変えていません。詳しくは`NOTICE`にあります。
+- 国旗・地域旗: Noto Emojiの波打った旗（`third_party/region-flags`）。旗のデザインはパブリックドメインか、著作権の対象外です。そのライセンスは`LICENSE-noto-emoji.txt`の末尾にあります。
 - ファイル名、英語名、カテゴリ: [gemoji](https://github.com/github/gemoji)、MIT License。ライセンス文は`LICENSE-gemoji.txt`にあります。
 - スクリプト: MIT。
 - オンライン用の各行は、公開されたリリースのPythonコードを実行します。GitHubは変更不可のリリースに添付されたファイルを固定し、そのインストーラーは`emoji_san_data.zip`を使う前にSHA-256を照合します。実行前にリリースのAssetsから各スクリプトをダウンロードして読めます。
@@ -397,7 +404,7 @@ ZIP='/path/to/emoji-san-1.0.0.zip'; LOCALE='en'; exec("from zipfile import ZipFi
 
 年に1回、Noto Emojiに新しい絵文字が入ったら:
 
-1. `python3 build/update_from_upstream.py`で、版を固定したUnicodeの絵文字一覧とNotoを照合します。SVG、一覧、スタイルファイルを検証してから差し替えます。picosvgが必要です（`python3 -m pip install picosvg`）。`--unicode-version`でUnicodeの版を選べます。新しい絵文字、NotoにSVGがない対象絵文字、互換性のために残した旧SVGが表示されます。公開済みのパスは維持します。新しいSVGの見た目はQGISで確認してください。Sのセットを変えるときは`core_list.txt`を編集して`python3 build/make_core.py`を実行します。
+1. `python3 build/update_from_upstream.py`で、版を固定したUnicodeの絵文字一覧とNotoを照合します。SVG、一覧、スタイルファイルを検証してから差し替えます。picosvgが必要です（`python3 -m pip install picosvg`）。`--unicode-version`でUnicodeの版を選べます。新しい絵文字、NotoにSVGがない対象絵文字、互換性のために残した旧SVGが表示されます。公開済みのパスは維持します。新しいSVGの見た目はQGISで確認してください。Sのセットを変えるときは`core_list.txt`を編集して`python3 build/make_core.py`を実行します。地図コレクションのものをMから外すときは、同じように`l_only_list.txt`に書きます。
 2. `install.py`の`TAG`と、このREADMEにあるバージョン（古い番号で検索すると見つかります）をすべて書き換え、セットの表の個数を直します。`install.py`の`CLDR`は[cldr-json](https://github.com/unicode-org/cldr-json)の最新リリースに合わせます。新しい絵文字の各国語の名前はそこから取ります。
 3. `python3 -m unittest discover -s tests`で再ビルドと配布ファイルを確認します。`python3 tests/scenarios.py --online`で、既存プロジェクトの更新やCLDRの名前の取得を含め、分離したQGISプロファイルでインストーラーを確認します。後者は`qgis`をimportできるPythonが必要です。Dockerでの実行方法はスクリプトの先頭にあります。
 4. 公開する前に、リポジトリの設定で[リリースの変更を禁止](https://docs.github.com/en/code-security/how-tos/secure-your-supply-chain/establish-provenance-and-integrity/prevent-release-changes)します。コミット、タグ付け、プッシュを行います。タグを付けたコミットを変更のない状態でチェックアウトし、配布用ファイルを作って、6ファイルすべてをリリースの下書きに添付します。

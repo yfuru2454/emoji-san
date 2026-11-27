@@ -526,7 +526,7 @@ def _emoji_san_install(ns):
     from qgis.core import QgsApplication, QgsSettings
 
     REPO = "yfuru2454/emoji-san"
-    TAG = "v1.0.0"  # the release this script installs
+    TAG = "v1.1.0"  # the release this script installs
     DATA_SHA256 = None
     CLDR = ("https://raw.githubusercontent.com/unicode-org/cldr-json/49.0.0/"
             "cldr-json/")

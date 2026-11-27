@@ -30,6 +30,13 @@ Travel and Places/tokyo_tower                       # JP: タワー/展望
 Travel and Places/ferris_wheel                      # Maki: amusement-park
 Travel and Places/construction                      # Maki: construction／工事
 Travel and Places/playground_slide                  # OSM leisure=playground
+Travel and Places/map_of_japan                      # 日本 (v1.1)
+Travel and Places/world_map                         # 地図・案内図 (v1.1)
+Travel and Places/houses                            # 住宅地 (v1.1)
+Travel and Places/house_with_garden                 # 戸建て・庭 (v1.1)
+Travel and Places/building_construction             # 工事中 (v1.1)
+Travel and Places/roller_coaster                    # 遊園地 (v1.1)
+Travel and Places/star                              # おすすめ (v1.1)
 
 # Travel and Places: transport
 Travel and Places/bus                               # Maki: bus
@@ -54,6 +61,14 @@ Travel and Places/fuel_pump                         # Maki: fuel
 Travel and Places/police_car                        # Maki: police
 Travel and Places/fire_engine                       # Maki: fire-station
 Travel and Places/ambulance                         # OSM emergency=ambulance_station
+Travel and Places/bus_stop                          # バス停 (v1.1)
+Travel and Places/vertical_traffic_light            # 信号 (v1.1)
+Travel and Places/stop_sign                         # 一時停止 (v1.1)
+Travel and Places/high_speed_train                  # 新幹線 (v1.1)
+Travel and Places/tram_car                          # 路面電車 (v1.1)
+Travel and Places/mountain_cableway                 # ロープウェイ (v1.1)
+Travel and Places/airplane_departure                # 空港・出発 (v1.1)
+Travel and Places/passenger_ship                    # 客船・フェリー (v1.1)
 
 # Travel and Places: nature/landmarks
 Travel and Places/mount_fuji                        # JP: 富士山/名山
@@ -62,6 +77,19 @@ Travel and Places/volcano                           # Maki: volcano
 Travel and Places/beach_with_umbrella               # Maki: beach
 Travel and Places/hot_springs                       # JP: 温泉♨（地図記号）
 Travel and Places/high_voltage                      # 電力設備/感電注意
+Travel and Places/snow_capped_mountain              # 雪山 (v1.1)
+Travel and Places/national_park                     # 自然公園・国立公園 (v1.1)
+Travel and Places/desert_island                     # 島 (v1.1)
+Travel and Places/camping                           # キャンプ場 (v1.1)
+Travel and Places/rock                              # 岩・奇岩 (v1.1)
+Travel and Places/sunrise                           # 日の出・夕日スポット (v1.1)
+Travel and Places/milky_way                         # 星空スポット (v1.1)
+Travel and Places/droplet                           # 湧水・名水 (v1.1)
+Travel and Places/sun                               # 晴れ (v1.1)
+Travel and Places/sun_behind_cloud                  # くもり (v1.1)
+Travel and Places/cloud_with_rain                   # 雨 (v1.1)
+Travel and Places/cloud_with_snow                   # 雪 (v1.1)
+Travel and Places/cyclone                           # 台風 (v1.1)
 
 # Food and Drink
 Food and Drink/fork_and_knife_with_plate            # Maki: restaurant
@@ -80,6 +108,21 @@ Food and Drink/birthday_cake                        # OSM shop=confectionery
 Food and Drink/ice_cream                            # Maki: ice-cream
 Food and Drink/bento_box                            # JP: 弁当/惣菜
 Food and Drink/tropical_drink                       # リゾート/ジューススタンド
+Food and Drink/red_apple                            # 果物・りんご (v1.1)
+Food and Drink/strawberry                           # いちご狩り (v1.1)
+Food and Drink/grapes                               # ぶどう狩り (v1.1)
+Food and Drink/peach                                # もも・岡山 (v1.1)
+Food and Drink/tangerine                            # みかん (v1.1)
+Food and Drink/curry_rice                           # カレー (v1.1)
+Food and Drink/spaghetti                            # パスタ・イタリアン (v1.1)
+Food and Drink/fried_shrimp                         # 天ぷら・えびフライ (v1.1)
+Food and Drink/oden                                 # おでん (v1.1)
+Food and Drink/dango                                # だんご・和菓子 (v1.1)
+Food and Drink/croissant                            # パン屋 (v1.1)
+Food and Drink/shortcake                            # ケーキ・カフェ (v1.1)
+Food and Drink/soft_ice_cream                       # ソフトクリーム (v1.1)
+Food and Drink/teacup_without_handle                # お茶・茶屋 (v1.1)
+Food and Drink/bubble_tea                           # タピオカ (v1.1)
 
 # Animals and Nature
 Animals and Nature/cherry_blossom                   # JP: 花見名所
@@ -96,6 +139,33 @@ Animals and Nature/fish                             # Maki: aquarium／釣り場
 Animals and Nature/bird                             # バードウォッチング
 Animals and Nature/paw_prints                       # 野生動物/動物注意
 Animals and Nature/spouting_whale                   # ホエールウォッチング
+Animals and Nature/bear                             # クマ出没 (v1.1)
+Animals and Nature/panda                            # パンダ・動物園 (v1.1)
+Animals and Nature/koala                            # コアラ・動物園 (v1.1)
+Animals and Nature/lion                             # ライオン・動物園 (v1.1)
+Animals and Nature/tiger_face                       # トラ・動物園 (v1.1)
+Animals and Nature/elephant                         # ゾウ・動物園 (v1.1)
+Animals and Nature/giraffe                          # キリン・動物園 (v1.1)
+Animals and Nature/monkey_face                      # サル出没・野猿公苑 (v1.1)
+Animals and Nature/fox                              # キツネ (v1.1)
+Animals and Nature/rabbit_face                      # うさぎ・ふれあい (v1.1)
+Animals and Nature/pig_face                         # 養豚・ふれあい (v1.1)
+Animals and Nature/frog                             # カエル・水辺 (v1.1)
+Animals and Nature/penguin                          # 水族館・動物園 (v1.1)
+Animals and Nature/owl                              # フクロウ・夜の自然観察 (v1.1)
+Animals and Nature/duck                             # 水鳥・池 (v1.1)
+Animals and Nature/dolphin                          # 水族館・イルカウォッチング (v1.1)
+Animals and Nature/turtle                           # ウミガメ産卵地 (v1.1)
+Animals and Nature/butterfly                        # 昆虫観察 (v1.1)
+Animals and Nature/boar                             # イノシシ出没・獣害 (v1.1)
+Animals and Nature/deer                             # シカ出没・獣害 (v1.1)
+Animals and Nature/sheaf_of_rice                    # 田んぼ・農地 (v1.1)
+Animals and Nature/seedling                         # 農園・植樹 (v1.1)
+Animals and Nature/mushroom                         # きのこ・森 (v1.1)
+Animals and Nature/tulip                            # 花畑 (v1.1)
+Animals and Nature/hibiscus                         # 南国の花 (v1.1)
+Animals and Nature/cactus                           # 乾燥地 (v1.1)
+Animals and Nature/herb                             # ハーブ園・植物園 (v1.1)
 
 # Activities
 Activities/soccer_ball                              # Maki: soccer
@@ -108,6 +178,14 @@ Activities/fishing_pole                             # OSM leisure=fishing
 Activities/performing_arts                          # Maki: theatre
 Activities/artist_palette                           # Maki: art-gallery
 Activities/video_game                               # OSM leisure=amusement_arcade
+Objects/microphone                                  # カラオケ (v1.1)
+Activities/bowling                                  # ボウリング (v1.1)
+Activities/bullseye                                 # ダーツ (v1.1)
+Activities/slot_machine                             # パチンコ・スロット (v1.1)
+Activities/jack_o_lantern                           # ハロウィン (v1.1)
+Activities/christmas_tree                           # クリスマス (v1.1)
+Activities/fireworks                                # 花火大会 (v1.1)
+Activities/party_popper                             # イベント・祭り (v1.1)
 
 # Objects
 Objects/camera                                      # Maki: attraction（撮影スポット）
@@ -126,6 +204,9 @@ Objects/telephone                                   # Maki: telephone（公衆�
 Objects/musical_note                                # Maki: music（ライブ/カラオケ）
 Objects/fire_extinguisher                           # 防災: 消火設備
 Objects/wastebasket                                 # Maki: waste-basket（ごみ箱）
+Objects/postbox                                     # ポスト (v1.1)
+Objects/electric_plug                               # 電源・EV充電 (v1.1)
+Objects/battery                                     # 充電スポット (v1.1)
 
 # Symbols
 Symbols/warning                                     # 防災: 注意/危険箇所
@@ -167,6 +248,15 @@ Objects/chair                                       # ベンチ/休憩所
 Objects/placard                                     # 案内板/掲示
 Objects/microscope                                  # 研究所
 Objects/laptop                                      # IT/コワーキング
+Symbols/no_smoking                                  # 禁煙 (v1.1)
+Objects/elevator                                    # エレベーター (v1.1)
+Symbols/mens_room                                   # 男性トイレ (v1.1)
+Symbols/womens_room                                 # 女性トイレ (v1.1)
+Symbols/baby_symbol                                 # 授乳・おむつ替え (v1.1)
+Symbols/free_button                                 # 無料 (v1.1)
+Symbols/new_button                                  # 新しい (v1.1)
+Symbols/check_mark_button                           # 済み・OK (v1.1)
+Symbols/cross_mark                                  # 不可・閉鎖 (v1.1)
 
 # Smileys and Emotion: 評価・感情の可視化
 Smileys and Emotion/grinning_face                   # 評価: ポジティブ
@@ -202,6 +292,15 @@ Smileys and Emotion/hundred_points                  # 評価: 100点
 Smileys and Emotion/collision                       # 事故地点
 Smileys and Emotion/zzz                             # 休憩所/仮眠
 Smileys and Emotion/speech_balloon                  # 口コミ/コメント
+Smileys and Emotion/grinning_face_with_sweat        # おじさん文体 (v1.1)
+Smileys and Emotion/winking_face                    # おじさん文体 (v1.1)
+Smileys and Emotion/winking_face_with_tongue        # おじさん文体 (v1.1)
+Smileys and Emotion/face_blowing_a_kiss             # おじさん文体 (v1.1)
+Smileys and Emotion/smiling_face_with_hearts        # おじさん文体 (v1.1)
+Smileys and Emotion/grinning_squinting_face         # おじさん文体 (v1.1)
+Smileys and Emotion/smiling_face_with_open_hands    # おじさん文体 (v1.1)
+Smileys and Emotion/pleading_face                   # おじさん文体 (v1.1)
+Smileys and Emotion/smiling_face_with_halo          # おじさん文体 (v1.1)
 
 # People and Body: ジェスチャー
 People and Body/thumbs_up                           # 評価: 高
@@ -214,6 +313,7 @@ People and Body/handshake                           # 提携/取引先
 People and Body/flexed_biceps                       # ジム/トレーニング
 People and Body/eyes                                # 注目/監視
 People and Body/footprints                          # 散策路/痕跡
+People and Body/raising_hands                       # おじさん文体 (v1.1)
 
 # People and Body: 属性（施設対応）
 People and Body/person                              # 汎用人物

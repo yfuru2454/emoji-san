@@ -3,11 +3,14 @@
 
     python3 build/make_core.py
 
-Reads core_list.txt (the S set, edited by hand) and index.csv, and writes:
+Reads core_list.txt (the S set, edited by hand), l_only_list.txt (what
+the M set leaves out, edited by hand) and index.csv, and writes:
 
   index.csv                    the "set" column: S for the emoji in
-                               core_list.txt, M for the rest of the map
-                               collection, L for the others
+                               core_list.txt; M for the rest of the map
+                               collection, except l_only_list.txt, and for
+                               the faces (Smileys & Emotion); L for the
+                               others: people, hands and flags
   styles/emoji_san_core.xml    the S set as QGIS symbols with the SVG
                                inside, for the Style Manager. This is the
                                file attached to a release.
@@ -39,6 +42,23 @@ INDEX_FIELDS = ["emoji", "codepoint", "name", "category", "collection",
 OUTPUTS = (pathlib.Path("index.csv"),
            pathlib.Path("styles/emoji_san_core.xml"),
            pathlib.Path("review_core.html"))
+
+
+L_ONLY_LIST = "l_only_list.txt"
+M_CATEGORIES = ("Smileys & Emotion",)  # outside the map collection
+
+
+def read_l_only(root):
+    """Paths in l_only_list.txt: map-collection emoji kept out of M."""
+    listing = root / L_ONLY_LIST
+    if not listing.is_file():
+        return set()
+    paths = set()
+    for line in listing.read_text(encoding="utf-8").splitlines():
+        entry = line.partition("#")[0].strip()
+        if entry:
+            paths.add(entry + ".svg")
+    return paths
 
 
 def read_core(root):
@@ -233,11 +253,18 @@ def build_core(source, output, rows):
             f"e.g. {missing[:3]}. Run build/update_from_upstream.py."
         )
 
+    l_only = read_l_only(source)
+    unknown = sorted(l_only - set(by_path))
+    if unknown:
+        raise ValueError(f"{L_ONLY_LIST} names emoji that index.csv does not "
+                         f"have: {unknown}")
+
     # 1) index.csv: which set each emoji belongs to
     in_core = set(paths)
     for r in rows:
-        r["set"] = ("S" if r["path"] in in_core else
-                    "M" if r["collection"] == "map" else "L")
+        in_m = ((r["collection"] == "map" and r["path"] not in l_only)
+                or r["category"] in M_CATEGORIES)
+        r["set"] = ("S" if r["path"] in in_core else "M" if in_m else "L")
     # 2) the style file. A symbol is named "<emoji> <file name>", e.g.
     # "✈️ airplane". A bare "airplane" or "bank" could collide with a
     # user's existing symbol and prompt for an overwrite.

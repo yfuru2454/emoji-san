@@ -11,7 +11,9 @@ not QGIS.
 
 The pinned Unicode emoji-test.txt supplies the emoji groups and English
 names. The corresponding Noto SVGs are downloaded and rewritten where
-needed for Qt. Skin-tone variants and regional flags are excluded.
+needed for Qt. Skin-tone variants are excluded. Country and subdivision
+flags come from Noto's waved flags (third_party/region-flags/waved-svg),
+whose designs are in the public domain.
 
 Previously published paths and collections stay stable. If an emoji or
 its artwork is absent upstream, the previous SVG is kept for existing
@@ -22,8 +24,10 @@ It verifies the Noto license and builds the S style before publishing files.
 Then go on with "Maintenance" in README.md.
 """
 import argparse
+import unicodedata
 import concurrent.futures
 import pathlib
+import posixpath
 import re
 import shutil
 import subprocess
@@ -42,6 +46,10 @@ UNICODE_PUBLIC = "https://www.unicode.org/Public/"
 NOTO_REPO = "https://github.com/googlefonts/noto-emoji.git"
 NOTO_RAW = "https://raw.githubusercontent.com/googlefonts/noto-emoji/"
 NOTO_SVG_DIR = "2D/svg"  # was "svg" until 2025; look here first if it fails
+# Noto's flags are not in 2D/svg. These are the waved flags of the font.
+NOTO_FLAG_DIR = "third_party/region-flags/waved-svg"
+NOTO_FLAG_LICENSE = "third_party/region-flags/LICENSE"
+FLAG_SUBGROUPS = ("flag", "country-flag", "subdivision-flag")
 
 # Unicode emoji group -> collection. The collections are also what QGIS
 # Resource Sharing offers (metadata.ini); install.py puts both in one folder.
@@ -90,7 +98,10 @@ def codepoint_label(points):
 
 def allocate_path(description, folder, used):
     """Allocate a path from a short name, adding _2, _3, ... as needed."""
-    name = re.sub(r"[\u2018\u2019\u201c\u201d\"']", "", description.lower())
+    name = "".join(c for c in unicodedata.normalize("NFKD", description.lower())
+                   if not unicodedata.combining(c))  # Å -> a
+    name = name.replace("#", " number sign").replace("*", " asterisk")
+    name = re.sub(r"[\u2018\u2019\u201c\u201d\"']", "", name)
     name = re.sub(r"[^a-z0-9]+", "_", name).strip("_") or "emoji"
     if name in WINDOWS_RESERVED:
         name += "_"
@@ -105,7 +116,8 @@ def allocate_path(description, folder, used):
 
 def upstream_files(commit):
     """(commit hash, names of the SVG files) of noto-emoji at a commit,
-    without downloading the repository's files."""
+    without downloading the repository's files. Files in 2D/svg are named
+    as they are; the flags with their folder, as noto_file in index.csv."""
     with tempfile.TemporaryDirectory() as tmp:
         def git(*args):
             return subprocess.run(["git", "-C", tmp, *args], check=True,
@@ -116,7 +128,10 @@ def upstream_files(commit):
         sha = git("rev-parse", "FETCH_HEAD").strip()
         names = git("ls-tree", "--name-only",
                     f"FETCH_HEAD:{NOTO_SVG_DIR}").split()
-    return sha, {n for n in names if n.endswith(".svg")}
+        flags = git("ls-tree", "--name-only",
+                    f"FETCH_HEAD:{NOTO_FLAG_DIR}").split()
+    return sha, ({n for n in names if n.endswith(".svg")}
+                 | {f"{NOTO_FLAG_DIR}/{n}" for n in flags if n.endswith(".svg")})
 
 
 def release_number(value):
@@ -152,10 +167,12 @@ def unicode_emoji(data, version):
         if status.strip() != "fully-qualified":
             continue
         points = tuple(int(point, 16) for point in codepoints.split())
-        if any(point in SKIN_TONES or point in REGIONAL_INDICATORS
-               or point in TAG_CHARACTERS for point in points):
+        if category == "Flags" and subgroup not in FLAG_SUBGROUPS:
             continue
-        if category == "Flags" and subgroup != "flag":
+        flag = category == "Flags"  # the only ones made of these code points
+        if any(point in SKIN_TONES or (not flag and (
+                point in REGIONAL_INDICATORS or point in TAG_CHARACTERS))
+               for point in points):
             continue
         label = comment.split(maxsplit=2)
         emoji = "".join(chr(point) for point in points)
@@ -174,7 +191,7 @@ def match_noto(noto):
     files = {}
     for filename in sorted(noto):
         match = re.fullmatch(r"emoji_u([0-9a-f]+(?:_[0-9a-f]+)*)\.svg",
-                             filename)
+                             filename.rsplit("/", 1)[-1])
         if match:
             points = tuple(int(point, 16) for point in match[1].split("_"))
             files.setdefault(emoji_key(points), {})[points] = filename
@@ -287,6 +304,11 @@ def for_qt(svg, source):
     return text.encode("utf-8")
 
 
+def noto_url(base, name):
+    """noto_file is a name in 2D/svg, or a path from the repository root."""
+    return f"{base}{name}" if "/" in name else f"{base}{NOTO_SVG_DIR}/{name}"
+
+
 def fetch(url, tries=3):
     for attempt in range(1, tries + 1):
         try:
@@ -341,11 +363,26 @@ def stage_update(root, staging, commit, version):
             f"Upstream's license notice ({NOTO_SVG_DIR}/LICENSE) no longer "
             "matches the top of LICENSE-noto-emoji.txt. Read the new notice "
             "and update the licensing documentation first.")
+    flag_notice = fetch(f"{base}{NOTO_FLAG_LICENSE}").strip()
+    if not flag_notice or flag_notice not in local_license:
+        raise ValueError(
+            f"Upstream's flag license ({NOTO_FLAG_LICENSE}) is not quoted in "
+            "LICENSE-noto-emoji.txt. Read it and update the licensing "
+            "documentation first.")
 
     def get(row):
         name = row["noto_file"]
         try:
-            return fetch(f"{base}{NOTO_SVG_DIR}/{name}")
+            blob = fetch(noto_url(base, name))
+            if "/" in name and not blob.lstrip().startswith(b"<"):
+                # A git symlink: a flag shared by several regions, such as
+                # Norway's for Bouvet Island. Raw downloads give the target.
+                target = posixpath.normpath(posixpath.join(
+                    posixpath.dirname(name), blob.decode("utf-8").strip()))
+                if not target.startswith(NOTO_FLAG_DIR + "/"):
+                    raise ValueError(f"{name} links outside the flags")
+                blob = fetch(f"{base}{target}")
+            return blob
         except OSError as error:
             raise RuntimeError(
                 f"Could not download {name}: {error}") from error
@@ -386,7 +423,9 @@ def stage_update(root, staging, commit, version):
     upstream_commit = pathlib.Path("UPSTREAM_COMMIT.txt")
     (staging / upstream_commit).write_text(
         provenance(root, sha, url, retained), encoding="utf-8")
-    shutil.copyfile(root / "core_list.txt", staging / "core_list.txt")
+    for listing in ("core_list.txt", make_core.L_ONLY_LIST):
+        if (root / listing).is_file():
+            shutil.copyfile(root / listing, staging / listing)
     make_core.build_core(staging, staging, rows)
     paths = [make_core.svg_path(row) for row in downloads]
     paths += [upstream_commit, *make_core.OUTPUTS]

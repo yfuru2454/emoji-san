@@ -3,16 +3,21 @@
 
     python3 build/make_core.py
 
-Reads core_list.txt (the S set, edited by hand) and index.csv, and writes:
+Reads core_list.txt (the S set, edited by hand), l_only_list.txt (what
+the M set leaves out, edited by hand) and index.csv, and writes:
 
   index.csv                    the "set" column: S for the emoji in
-                               core_list.txt, M for the rest of the map
-                               collection, L for the others
+                               core_list.txt; M for the rest of the map
+                               collection, except l_only_list.txt, and for
+                               the faces (Smileys & Emotion); L for the
+                               others: people, hands and flags
   styles/emoji_san_core.xml    the S set as QGIS symbols with the SVG
                                inside, for the Style Manager. This is the
                                file attached to a release.
   review_core.html             the S set on one page, for looking it over
                                (not committed)
+  README.md                    the emoji of each set, between the
+                               "sets:en" and "sets:ja" marker lines
 
 Run it after editing core_list.txt. update_from_upstream.py runs it as its
 last step.
@@ -27,6 +32,7 @@ import csv
 import html
 import os
 import pathlib
+import re
 import shutil
 import sys
 import tempfile
@@ -39,6 +45,34 @@ INDEX_FIELDS = ["emoji", "codepoint", "name", "category", "collection",
 OUTPUTS = (pathlib.Path("index.csv"),
            pathlib.Path("styles/emoji_san_core.xml"),
            pathlib.Path("review_core.html"))
+
+
+README = pathlib.Path("README.md")
+# The emoji of each set, written into README.md between these lines
+SETS_BLOCK = re.compile(
+    r"(<!-- sets:(en|ja) begin[^>]*-->\n).*?(<!-- sets:\2 end -->)", re.S)
+SETS_SUMMARY = {
+    "en": ("S: the {n} emoji", "M adds {n} emoji", "L adds {n} emoji"),
+    "ja": ("S：{n}個の絵文字", "Mで増える{n}個", "Lで増える{n}個"),
+}
+CATEGORY_ORDER = ("Smileys & Emotion", "People & Body", "Animals & Nature",
+                  "Food & Drink", "Travel & Places", "Activities", "Objects",
+                  "Symbols", "Flags")
+L_ONLY_LIST = "l_only_list.txt"
+M_CATEGORIES = ("Smileys & Emotion",)  # outside the map collection
+
+
+def read_l_only(root):
+    """Paths in l_only_list.txt: map-collection emoji kept out of M."""
+    listing = root / L_ONLY_LIST
+    if not listing.is_file():
+        return set()
+    paths = set()
+    for line in listing.read_text(encoding="utf-8").splitlines():
+        entry = line.partition("#")[0].strip()
+        if entry:
+            paths.add(entry + ".svg")
+    return paths
 
 
 def read_core(root):
@@ -208,6 +242,34 @@ function tg(el){el.classList.toggle('off');upd()}upd();
 </script></body></html>"""
 
 
+def sets_markdown(rows, language):
+    """Collapsible lists of the emoji each set adds, by category."""
+    blocks = []
+    for level, summary in zip("SML", SETS_SUMMARY[language]):
+        chosen = [r for r in rows if r["set"] == level]
+        lines = [f"<details>\n<summary>{summary.format(n=len(chosen))}"
+                 "</summary>\n"]
+        for category in CATEGORY_ORDER + tuple(sorted(
+                {r["category"] for r in chosen} - set(CATEGORY_ORDER))):
+            emoji = [r["emoji"] for r in chosen if r["category"] == category]
+            if emoji:
+                lines.append(f"**{category}** ({len(emoji)})<br>\n"
+                             + "".join(emoji) + "\n")
+        blocks.append("\n".join(lines) + "\n</details>\n")
+    return "\n".join(blocks)
+
+
+def write_readme(source, output, rows):
+    """README.md with its set lists brought up to date, if it has them."""
+    if not (source / README).is_file():
+        return []
+    text = (source / README).read_text(encoding="utf-8")
+    text = SETS_BLOCK.sub(lambda m: m[1] + sets_markdown(rows, m[2]) + m[3],
+                          text)
+    (output / README).write_text(text, encoding="utf-8")
+    return [README]
+
+
 def build_core(source, output, rows):
     """Build the CSV, style XML and review page in an isolated directory."""
     by_path = {r["path"]: r for r in rows}
@@ -233,11 +295,18 @@ def build_core(source, output, rows):
             f"e.g. {missing[:3]}. Run build/update_from_upstream.py."
         )
 
+    l_only = read_l_only(source)
+    unknown = sorted(l_only - set(by_path))
+    if unknown:
+        raise ValueError(f"{L_ONLY_LIST} names emoji that index.csv does not "
+                         f"have: {unknown}")
+
     # 1) index.csv: which set each emoji belongs to
     in_core = set(paths)
     for r in rows:
-        r["set"] = ("S" if r["path"] in in_core else
-                    "M" if r["collection"] == "map" else "L")
+        in_m = ((r["collection"] == "map" and r["path"] not in l_only)
+                or r["category"] in M_CATEGORIES)
+        r["set"] = ("S" if r["path"] in in_core else "M" if in_m else "L")
     # 2) the style file. A symbol is named "<emoji> <file name>", e.g.
     # "✈️ airplane". A bare "airplane" or "bank" could collide with a
     # user's existing symbol and prompt for an overwrite.
@@ -288,17 +357,19 @@ def build_core(source, output, rows):
         for s in sections))
     (output / OUTPUTS[2]).write_text(page, encoding="utf-8")
     write_index(output, rows)
+    written = list(OUTPUTS) + write_readme(source, output, rows)
 
     counts = {s: sum(r["set"] == s for r in rows) for s in "SML"}
     print(f"sets: S {counts['S']}, M {counts['S'] + counts['M']}, "
           f"L {len(rows)}")
+    return written
 
 
 def main():
     with build_workspace(ROOT) as staging:
-        build_core(ROOT, staging, read_index(ROOT))
-        publish(ROOT, staging, OUTPUTS)
-    print("wrote index.csv, styles/emoji_san_core.xml, review_core.html")
+        written = build_core(ROOT, staging, read_index(ROOT))
+        publish(ROOT, staging, written)
+    print("wrote " + ", ".join(map(str, written)))
 
 
 if __name__ == "__main__":

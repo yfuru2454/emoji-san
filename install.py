@@ -526,7 +526,7 @@ def _emoji_san_install(ns):
     from qgis.core import QgsApplication, QgsSettings
 
     REPO = "yfuru2454/emoji-san"
-    TAG = "v1.0.0"  # the release this script installs
+    TAG = "v1.1.0"  # the release this script installs
     DATA_SHA256 = None
     CLDR = ("https://raw.githubusercontent.com/unicode-org/cldr-json/49.0.0/"
             "cldr-json/")
@@ -559,15 +559,15 @@ def _emoji_san_install(ns):
             "same": "特に変わりなしだヨ❗ 今日も地図作り、がんばってネ💪✨",
         },
         "en": {
-            "first": "%(n)d emoji installed! Have fun with your maps 😃✨ "
-                     "Love, EmOji-san 👨‍💼",
-            "up": "Upgraded to size %(set)s! %(added)d more emoji for you "
-                  "😆👍 Love, EmOji-san 👨‍💼",
-            "down": "Back to size %(set)s... %(removed)d emoji said goodbye "
-                    "😢 Love, EmOji-san 👨‍💼",
-            "update": "Updated to the latest! Fresh emoji for you 😆👍 "
-                      "Love, EmOji-san 👨‍💼",
-            "same": "All up to date! Keep up the good work 💪 "
+            "first": "%(n)d emoji delivered❗ Have fun with your maps 😃✨🗺️💕 "
+                     "Love, EmOji-san 👨‍💼😘",
+            "up": "Upgraded to size %(set)s❗ %(added)d more emoji for you "
+                  "😆👍🎉 Love, EmOji-san 👨‍💼😘",
+            "down": "Back to size %(set)s 😅 %(removed)d emoji said goodbye "
+                    "😢💦 Love, EmOji-san 👨‍💼",
+            "update": "Updated to the latest❗ Shiny new emoji for you 😆✨ "
+                      "Love, EmOji-san 👨‍💼😘",
+            "same": "All up to date❗ Keep up the good work on your maps 💪✨😉 "
                     "Love, EmOji-san 👨‍💼",
         },
     }

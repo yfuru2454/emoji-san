@@ -13,10 +13,11 @@
 #   - symbols imported from emoji_san_core.xml all draw (and whether they
 #     are the drawings of the installed files)
 #   - embedding on save, if it is switched on, really embeds
-# Then it adds a layer "EmOji-san demo" with 8 emoji around the centre of
-# the map. DEMO=False; in front of the command leaves that out.
+# Then it adds a layer "EmOji-san catalog": every installed emoji with its
+# name, in a grid with one block per category, fitted into the view of the
+# map. DEMO=False; in front of the command leaves that out.
 #
-# Nothing is changed apart from the demo layer.
+# Nothing is changed apart from the catalog layer.
 
 
 def _emoji_san_check(ns):
@@ -26,11 +27,10 @@ def _emoji_san_check(ns):
     import math
     import os
 
-    from qgis.core import (Qgis, QgsApplication,
-                           QgsCategorizedSymbolRenderer, QgsFeature,
+    from qgis.core import (Qgis, QgsApplication, QgsFeature,
                            QgsGeometry, QgsMarkerSymbol, QgsPointXY,
                            QgsProject, QgsReadWriteContext,
-                           QgsRendererCategory, QgsSettings, QgsStyle,
+                           QgsSettings, QgsStyle,
                            QgsSvgMarkerSymbolLayer, QgsSymbolLayerUtils,
                            QgsVectorLayer)
     from qgis.PyQt.QtCore import QSize, QStandardPaths
@@ -259,53 +259,141 @@ def _emoji_san_check(ns):
                "EMBED=True; in front" % (in_startup, hook is not None,
                                          embeds, again))
 
-    # --- demo layer -------------------------------------------------------
+    # --- catalog layer ----------------------------------------------------
+    # Every installed emoji as a point with its name, in a grid with one
+    # block per category, fitted into the current view of the map.
     if demo and present:
         from qgis.utils import iface
-        first = ["Food and Drink/hot_beverage.svg",
-                 "Travel and Places/convenience_store.svg",
-                 "Travel and Places/hospital.svg",
-                 "Travel and Places/hot_springs.svg",
-                 "Travel and Places/bus.svg",
-                 "Animals and Nature/cherry_blossom.svg",
-                 "Symbols/warning.svg",
-                 "Activities/soccer_ball.svg"]
-        by_path = {r["path"]: r for r in present}
-        picks = [by_path[p] for p in first if p in by_path]
-        picks += [r for r in present if r["path"] not in first]
-        picks = picks[:8]
+        from qgis.core import (QgsPalLayerSettings, QgsProperty,
+                               QgsRuleBasedLabeling, QgsSymbolLayer,
+                               QgsTextFormat)
 
-        layer = QgsVectorLayer("Point?field=emoji:string", "EmOji-san demo",
-                               "memory")
+        def enum(owner, scoped, old):  # QGIS 4 has only the scoped names
+            try:
+                return getattr(getattr(owner, scoped[0]), scoped[1])
+            except AttributeError:
+                return getattr(owner, old)
+
+        MAP_UNITS = Qgis.RenderUnit.MapUnits
+        WIDTH = 10  # emoji per row in a block
+        name_column = local[0] if local else None
+        blocks = {}
+        for r in present:  # index.csv order: Unicode order within a category
+            blocks.setdefault(r["path"].split("/")[0], []).append(r)
+        heights = [1 + -(-len(rows_) // WIDTH) + 1 for rows_ in blocks.values()]
+
+        view = None
+        if iface and iface.mapCanvas().extent().width() > 0:
+            view = iface.mapCanvas().extent()
+        aspect = view.width() / view.height() if view else 16 / 9
+
+        def stack(columns):
+            """Blocks in category order, each into the shortest column."""
+            tops, places = [0] * columns, []
+            for height in heights:
+                column = tops.index(min(tops))
+                places.append((column, tops[column]))
+                tops[column] += height
+            return places, max(tops) - 1  # no gap after the last block
+
+        best = None
+        for columns in range(1, len(heights) + 1):
+            places, height = stack(columns)
+            width = columns * (WIDTH + 1) - 1
+            score = abs(math.log(width / height / aspect))
+            if best is None or score < best[0]:
+                best = (score, places, width, height)
+        _, places, grid_w, grid_h = best
+        if view:
+            cell = min(view.width() / grid_w, view.height() / grid_h)
+            left = view.center().x() - cell * grid_w / 2
+            top = view.center().y() + cell * grid_h / 2
+        else:
+            cell, left, top = 1.0, 0.0, 0.0
+
+        layer = QgsVectorLayer(
+            "Point?field=kind:string&field=emoji:string&field=name:string"
+            "&field=label:string&field=category:string&field=set:string"
+            "&field=path:string&field=file:string", "EmOji-san catalog",
+            "memory")
         if QgsProject.instance().crs().isValid():
             layer.setCrs(QgsProject.instance().crs())
-        centre, radius = QgsPointXY(0, 0), 1.0
-        if iface and iface.mapCanvas().extent().width() > 0:
-            extent = iface.mapCanvas().extent()
-            centre = extent.center()
-            radius = min(extent.width(), extent.height()) * 0.3
-        features, categories = [], []
-        for i, r in enumerate(picks):
-            angle = 2 * math.pi * i / len(picks)
-            feature = QgsFeature(layer.fields())
-            feature.setGeometry(QgsGeometry.fromPointXY(QgsPointXY(
-                centre.x() + radius * math.cos(angle),
-                centre.y() + radius * math.sin(angle))))
-            feature.setAttributes([r["emoji"]])
-            features.append(feature)
-            symbol = QgsMarkerSymbol()
-            symbol.changeSymbolLayer(
-                0, QgsSvgMarkerSymbolLayer(file_of(r), 10))
-            categories.append(QgsRendererCategory(r["emoji"], symbol,
-                                                  r["emoji"]))
+
+        def point(column, row):
+            return QgsGeometry.fromPointXY(QgsPointXY(
+                left + (column + 0.5) * cell, top - (row + 0.5) * cell))
+
+        features = []
+        for (category, members), (block, first_row) in zip(blocks.items(),
+                                                          places):
+            x0 = block * (WIDTH + 1)
+            header = QgsFeature(layer.fields())
+            header.setGeometry(point(x0 - 0.45, first_row))
+            header.setAttributes(["category", "", "", "%s (%d)" % (
+                category, len(members)), category, "", "", ""])
+            features.append(header)
+            for i, r in enumerate(members):
+                feature = QgsFeature(layer.fields())
+                feature.setGeometry(point(x0 + i % WIDTH,
+                                          first_row + 1 + i // WIDTH))
+                label = (r.get(name_column) if name_column else "") or r["name"]
+                feature.setAttributes(["emoji", r["emoji"], r["name"], label,
+                                       category, r.get("set", ""), r["path"],
+                                       file_of(r)])
+                features.append(feature)
         layer.dataProvider().addFeatures(features)
         layer.updateExtents()
-        layer.setRenderer(QgsCategorizedSymbolRenderer("emoji", categories))
+
+        # one symbol for all: the SVG is the "file" of each point
+        marker = QgsSvgMarkerSymbolLayer(file_of(present[0]), cell * 0.6)
+        marker.setDataDefinedProperty(
+            enum(QgsSymbolLayer, ("Property", "Name"), "PropertyName"),
+            QgsProperty.fromField("file"))
+        marker.setDataDefinedProperty(
+            enum(QgsSymbolLayer, ("Property", "LayerEnabled"),
+                 "PropertyLayerEnabled"),
+            QgsProperty.fromExpression("\"kind\" = 'emoji'"))
+        symbol = QgsMarkerSymbol()
+        symbol.changeSymbolLayer(0, marker)
+        symbol.setSizeUnit(MAP_UNITS)
+        layer.renderer().setSymbol(symbol)
+
+        def labels(size, quadrant, y_offset, bold=False, wrap=0):
+            settings = QgsPalLayerSettings()
+            settings.fieldName = "label"
+            settings.placement = Qgis.LabelPlacement.OverPoint
+            settings.quadOffset = quadrant
+            settings.yOffset = y_offset
+            settings.offsetUnits = MAP_UNITS
+            settings.autoWrapLength = wrap
+            settings.displayAll = True  # names stay with their emoji
+            text = QgsTextFormat()
+            text.setSize(size)
+            text.setSizeUnit(MAP_UNITS)
+            if bold:
+                font = text.font()
+                font.setBold(True)
+                text.setFont(font)
+            settings.setFormat(text)
+            return settings
+
+        Quadrant = Qgis.LabelQuadrantPosition
+        root_rule = QgsRuleBasedLabeling.Rule(None)
+        root_rule.appendChild(QgsRuleBasedLabeling.Rule(
+            labels(cell * 0.12, Quadrant.Below, cell * 0.3, wrap=14),
+            0, 0, "\"kind\" = 'emoji'"))
+        root_rule.appendChild(QgsRuleBasedLabeling.Rule(
+            labels(cell * 0.4, Quadrant.Right, 0, bold=True),
+            0, 0, "\"kind\" = 'category'"))
+        layer.setLabeling(QgsRuleBasedLabeling(root_rule))
+        layer.setLabelsEnabled(True)
         QgsProject.instance().addMapLayer(layer)
         if iface:
             iface.mapCanvas().refresh()
-        print("  layer \"EmOji-san demo\" added: %d emoji around the centre "
-              "of the map. Remove it when you have seen it." % len(picks))
+        print("  layer \"EmOji-san catalog\" added: the %d emoji, by category "
+              "and with their names, in the view of the map. Zoom in to read "
+              "the names; remove the layer when you have seen it."
+              % len(present))
 
     failed = results.count(False)
     print("Result: %s (%d passed, %d failed, %d skipped)" % (

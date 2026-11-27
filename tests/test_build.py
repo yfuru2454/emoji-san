@@ -22,6 +22,7 @@ SVG = b'<svg xmlns="http://www.w3.org/2000/svg"/>'
 NEW_SVG = b'<svg xmlns="http://www.w3.org/2000/svg"><circle r="1"/></svg>'
 SUN = "Animals and Nature/sun.svg"
 RETIRED = "Food and Drink/retired.svg"
+FLAGS = update_from_upstream.NOTO_FLAG_DIR
 
 
 def entry(codepoints, name, status="fully-qualified"):
@@ -72,6 +73,8 @@ class AnnualBuildTest(unittest.TestCase):
             "# group: Travel & Places",
             entry("1F6D9", "lighthouse"),
             entry("1F6F6", "canoe"),
+            "# group: Smileys & Emotion",
+            entry("1F600", "grinning face"),
             "# group: People & Body",
             entry("1F44B 1F3FB", "waving hand: light skin tone"),
             "# group: Flags",
@@ -79,6 +82,7 @@ class AnnualBuildTest(unittest.TestCase):
             entry("1F3F3 FE0F 200D 26A7 FE0F", "transgender flag"),
             "# subgroup: country-flag",
             entry("1F1EF 1F1F5", "flag: Japan"),
+            entry("1F1E6 1F1FD", "flag: Åland Islands"),
             "# subgroup: subdivision-flag",
             entry("1F3F4 E0067 E0062 E0065 E006E E0067 E007F",
                   "flag: England"),
@@ -86,9 +90,21 @@ class AnnualBuildTest(unittest.TestCase):
         self.noto = {
             "emoji_u2600_fe0f.svg", "emoji_u1f31e.svg", "emoji_u1f6d9.svg",
             "emoji_u1f3f3_200d_26a7_fe0f.svg", "emoji_u1f44b_1f3fb.svg",
-            "emoji_u1f1ef_1f1f5.svg",
-            "emoji_u1f3f4_e0067_e0062_e0065_e006e_e0067_e007f.svg",
+            "emoji_u1f600.svg",
+            f"{FLAGS}/emoji_u1f1ef_1f1f5.svg",
+            f"{FLAGS}/emoji_u1f1e6_1f1fd.svg",
+            f"{FLAGS}/emoji_u1f3f4_e0067_e0062_e0065_e006e_e0067_e007f.svg",
         }
+        # England's flag is a git symlink to Japan's here, as Bouvet Island's
+        # is to Norway's upstream: a raw download gives the link's target.
+        self.links = {
+            f"{FLAGS}/emoji_u1f3f4_e0067_e0062_e0065_e006e_e0067_e007f.svg":
+                b"emoji_u1f1ef_1f1f5.svg",
+        }
+        self.write("README.md", "Sets\n<!-- sets:en begin -->\nold\n"
+                   "<!-- sets:en end -->\nrest\n".encode())
+        self.write("l_only_list.txt",
+                   b"# kept out of M\nTravel and Places/lighthouse\n")
 
     def write(self, path, content):
         target = self.root / path
@@ -106,7 +122,12 @@ class AnnualBuildTest(unittest.TestCase):
             name = url.rsplit("/", 1)[-1]
             if name == "LICENSE":
                 return b"Artwork License\n"
-            self.assertIn(name, self.noto)
+            path = url.split(NEXT_SHA + "/", 1)[1]
+            if path.startswith(update_from_upstream.NOTO_SVG_DIR + "/"):
+                path = name
+            if path in self.links:
+                return self.links[path]
+            self.assertIn(path, self.noto)
             return NEW_SVG
 
         output = io.StringIO()
@@ -125,8 +146,27 @@ class AnnualBuildTest(unittest.TestCase):
         by_path = {record["path"]: record for record in records}
         self.assertEqual(list(by_path), [
             SUN, RETIRED, "Animals and Nature/sun_3.svg",
-            "Travel and Places/lighthouse.svg", "Flags/transgender_flag.svg",
+            "Travel and Places/lighthouse.svg",
+            "Smileys and Emotion/grinning_face.svg",
+            "Flags/transgender_flag.svg", "Flags/flag_japan.svg",
+            "Flags/flag_aland_islands.svg", "Flags/flag_england.svg",
         ])
+        self.assertEqual({path: record["set"] for path, record in by_path.items()}, {
+            SUN: "S", RETIRED: "S", "Animals and Nature/sun_3.svg": "M",
+            "Travel and Places/lighthouse.svg": "L",  # l_only_list.txt
+            "Smileys and Emotion/grinning_face.svg": "M",  # faces are in M
+            "Flags/transgender_flag.svg": "L", "Flags/flag_japan.svg": "L",
+            "Flags/flag_aland_islands.svg": "L", "Flags/flag_england.svg": "L",
+        })
+        readme = (self.root / "README.md").read_text("utf-8")
+        self.assertNotIn("old", readme)
+        self.assertTrue(readme.endswith("<!-- sets:en end -->\nrest\n"))
+        self.assertIn("<summary>S: the 2 emoji</summary>", readme)
+        self.assertIn("**Flags** (4)<br>", readme)
+        self.assertEqual(by_path["Flags/flag_england.svg"]["noto_file"],
+                         f"{FLAGS}/emoji_u1f3f4_e0067_e0062_e0065_e006e_e0067_e007f.svg")
+        self.assertEqual((self.root / make_core.svg_path(
+            by_path["Flags/flag_england.svg"])).read_bytes(), NEW_SVG)
         self.assertEqual(by_path[SUN], {
             **self.sun, "name": "sunny", "noto_file": "emoji_u2600_fe0f.svg",
         })

@@ -9,9 +9,14 @@ Emoji artwork
   the Apache License, Version 2.0; LICENSE-noto-emoji.txt has the notice of
   that folder (2D/svg/LICENSE) and the text of the license.
 
+  The country and subdivision flags are from the same repository, folder
+  third_party/region-flags/waved-svg (the waved flags of the Noto Color
+  Emoji font). Their designs are in the public domain or otherwise exempt
+  from copyright; LICENSE-noto-emoji.txt ends with that folder's license
+  (third_party/region-flags/LICENSE).
+
   What EmOji-san changed (Apache License 2.0, section 4b):
-  - It includes part of the files. Skin-tone variants are left out, and
-    country flags are not in that folder.
+  - It includes part of the files. Skin-tone variants are left out.
   - It renamed the files from code points (emoji_u1f3ea.svg) to names
     (convenience_store.svg) and sorted them into one folder per category.
   - It rewrote the files that Qt, which draws the markers in QGIS, gets

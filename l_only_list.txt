@@ -1,0 +1,240 @@
+# What the M set leaves out of the map collection, one emoji per line:
+# "Category/name", the path in index.csv without ".svg". These are in L only.
+# M is the S set, the rest of the map collection and all the faces
+# (Smileys & Emotion). After editing, run:  python3 build/make_core.py
+# Adding a line here takes the emoji away from those who have the M set,
+# the next time they run the installer; maps that use it then show "?".
+
+# clock faces and timers
+Travel and Places/hourglass_done
+Travel and Places/hourglass_not_done
+Travel and Places/watch
+Travel and Places/alarm_clock
+Travel and Places/stopwatch
+Travel and Places/timer_clock
+Travel and Places/mantelpiece_clock
+Travel and Places/twelve_oclock
+Travel and Places/twelve_thirty
+Travel and Places/one_oclock
+Travel and Places/one_thirty
+Travel and Places/two_oclock
+Travel and Places/two_thirty
+Travel and Places/three_oclock
+Travel and Places/three_thirty
+Travel and Places/four_oclock
+Travel and Places/four_thirty
+Travel and Places/five_oclock
+Travel and Places/five_thirty
+Travel and Places/six_oclock
+Travel and Places/six_thirty
+Travel and Places/seven_oclock
+Travel and Places/seven_thirty
+Travel and Places/eight_oclock
+Travel and Places/eight_thirty
+Travel and Places/nine_oclock
+Travel and Places/nine_thirty
+Travel and Places/ten_oclock
+Travel and Places/ten_thirty
+Travel and Places/eleven_oclock
+Travel and Places/eleven_thirty
+
+# zodiac signs
+Symbols/aries
+Symbols/taurus
+Symbols/gemini
+Symbols/cancer
+Symbols/leo
+Symbols/virgo
+Symbols/libra
+Symbols/scorpio
+Symbols/sagittarius
+Symbols/capricorn
+Symbols/aquarius
+Symbols/pisces
+Symbols/ophiuchus
+
+# punctuation
+Symbols/double_exclamation_mark
+Symbols/exclamation_question_mark
+Symbols/red_question_mark
+Symbols/white_question_mark
+Symbols/white_exclamation_mark
+Symbols/red_exclamation_mark
+Symbols/wavy_dash
+
+# math signs
+Symbols/multiply
+Symbols/plus
+Symbols/minus
+Symbols/divide
+Symbols/heavy_equals_sign
+Symbols/infinity
+
+# keycap
+Symbols/keycap_10
+Symbols/keycap_number_sign
+Symbols/keycap_asterisk
+Symbols/keycap_0
+Symbols/keycap_1
+Symbols/keycap_2
+Symbols/keycap_3
+Symbols/keycap_4
+Symbols/keycap_5
+Symbols/keycap_6
+Symbols/keycap_7
+Symbols/keycap_8
+Symbols/keycap_9
+
+# player buttons
+Symbols/shuffle_tracks_button
+Symbols/repeat_button
+Symbols/repeat_single_button
+Symbols/play_button
+Symbols/fast_forward_button
+Symbols/next_track_button
+Symbols/play_or_pause_button
+Symbols/reverse_button
+Symbols/fast_reverse_button
+Symbols/last_track_button
+Symbols/upwards_button
+Symbols/fast_up_button
+Symbols/downwards_button
+Symbols/fast_down_button
+Symbols/pause_button
+Symbols/stop_button
+Symbols/record_button
+Symbols/eject_button
+Symbols/dim_button
+Symbols/bright_button
+Symbols/antenna_bars
+Symbols/wireless
+Symbols/vibration_mode
+Symbols/mobile_phone_off
+
+# gender signs
+Symbols/female_sign
+Symbols/male_sign
+Symbols/transgender_symbol
+
+# currency signs
+Symbols/currency_exchange
+Symbols/heavy_dollar_sign
+
+# speakers and bells
+Objects/muted_speaker
+Objects/speaker_low_volume
+Objects/speaker_medium_volume
+Objects/speaker_high_volume
+Objects/loudspeaker
+Objects/megaphone
+Objects/postal_horn
+Objects/bell
+Objects/bell_with_slash
+
+# pens and pencils
+Objects/pencil
+Objects/black_nib
+Objects/fountain_pen
+Objects/pen
+Objects/paintbrush
+Objects/crayon
+Objects/memo
+
+# musical instruments
+Objects/saxophone
+Objects/accordion
+Objects/guitar
+Objects/musical_keyboard
+Objects/trumpet
+Objects/violin
+Objects/banjo
+Objects/drum
+Objects/long_drum
+Objects/maracas
+Objects/flute
+Objects/trombone
+Objects/harp
+
+# cards, dice and toys
+Activities/yo_yo
+Activities/kite
+Activities/water_pistol
+Activities/pool_8_ball
+Activities/crystal_ball
+Activities/magic_wand
+Activities/joystick
+Activities/game_die
+Activities/puzzle_piece
+Activities/teddy_bear
+Activities/pi_ata
+Activities/mirror_ball
+Activities/nesting_dolls
+Activities/spade_suit
+Activities/heart_suit
+Activities/diamond_suit
+Activities/club_suit
+Activities/chess_pawn
+Activities/joker
+Activities/mahjong_red_dragon
+Activities/flower_playing_cards
+
+# clothes and accessories
+Objects/glasses
+Objects/sunglasses
+Objects/goggles
+Objects/lab_coat
+Objects/safety_vest
+Objects/necktie
+Objects/t_shirt
+Objects/jeans
+Objects/scarf
+Objects/gloves
+Objects/coat
+Objects/socks
+Objects/dress
+Objects/kimono
+Objects/sari
+Objects/one_piece_swimsuit
+Objects/briefs
+Objects/shorts
+Objects/bikini
+Objects/womans_clothes
+Objects/folding_hand_fan
+Objects/purse
+Objects/handbag
+Objects/clutch_bag
+Objects/backpack
+Objects/thong_sandal
+Objects/mans_shoe
+Objects/flat_shoe
+Objects/high_heeled_shoe
+Objects/womans_sandal
+Objects/ballet_shoes
+Objects/womans_boot
+Objects/hair_pick
+Objects/crown
+Objects/womans_hat
+Objects/top_hat
+Objects/billed_cap
+Objects/military_helmet
+Objects/rescue_workers_helmet
+Objects/prayer_beads
+Objects/lipstick
+Objects/ring
+Objects/gem_stone
+
+# moon phases and faces of the moon and sun
+Travel and Places/new_moon
+Travel and Places/waxing_crescent_moon
+Travel and Places/first_quarter_moon
+Travel and Places/waxing_gibbous_moon
+Travel and Places/full_moon
+Travel and Places/waning_gibbous_moon
+Travel and Places/last_quarter_moon
+Travel and Places/waning_crescent_moon
+Travel and Places/crescent_moon
+Travel and Places/new_moon_face
+Travel and Places/first_quarter_moon_face
+Travel and Places/last_quarter_moon_face
+Travel and Places/full_moon_face
+Travel and Places/sun_with_face

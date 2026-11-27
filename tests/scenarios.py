@@ -483,8 +483,11 @@ def scenarios(settings, work, online, organization):
           and "of another release" not in out, "six checks pass, among "
           "them the imported symbols and the embedding")
     check(not left, "nothing is left in the console's namespace %s" % left)
-    check(len(QgsProject.instance().mapLayersByName("EmOji-san demo")) == 1,
-          "the demo layer is added")
+    catalog = QgsProject.instance().mapLayersByName("EmOji-san catalog")
+    installed = list(index_csv())
+    check(len(catalog) == 1 and catalog[0].featureCount() == len(installed)
+          + len({path.split("/")[0] for path in installed}),
+          "the catalog layer has each emoji and a heading per category")
     QgsProject.instance().clear()
     out, _ = console("tests/check_install.py", DEMO=False)
     check(not QgsProject.instance().mapLayers(), "DEMO=False adds no layer")
@@ -979,7 +982,10 @@ def release_scenario(root, archive, work, tag, readme, want):
     subprocess.run([sys.executable, str(REPO / "build" / "make_release.py"),
                     str(release_dir)], check=True, timeout=120)
     release = "https://github.com/yfuru2454/emoji-san/releases/download/v%s/" % tag
-    install_url = release + "install.py"
+    # README gives the line that follows the latest release; GitHub sends
+    # it to the assets of the newest tag, whose installer names its data
+    install_url = ("https://github.com/yfuru2454/emoji-san/releases/latest/"
+                   "download/install.py")
     data_url = release + "emoji_san_data.zip"
     payload = (release_dir / "emoji_san_data.zip").read_bytes()
     with zipfile.ZipFile(io.BytesIO(payload)) as data:

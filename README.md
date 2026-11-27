@@ -18,14 +18,14 @@ Tested with QGIS 3.34, 3.44 and 4.4.
 2. Paste this line and press Enter.
 
    ```python
-   import urllib.request as u; exec(u.urlopen('https://github.com/yfuru2454/emoji-san/releases/download/v1.1.0/install.py').read())
+   import urllib.request as u; exec(u.urlopen('https://github.com/yfuru2454/emoji-san/releases/latest/download/install.py').read())
    ```
 
 3. The console prints this. The folder depends on your system.
 
    ```
    EmOji-san: getting https://github.com/yfuru2454/emoji-san/releases/download/v1.1.0/emoji_san_data.zip
-   300 emoji installed! Have fun with your maps 😃✨ Love, EmOji-san 👨‍💼
+   300 emoji delivered❗ Have fun with your maps 😃✨🗺️💕 Love, EmOji-san 👨‍💼😘
    EmOji-san S: 300 emoji (+300 added, -0 removed) -> C:\Users\you\AppData\Roaming\QGIS\QGIS3\EmOji-san
      index.csv
      registered as an SVG path (Settings > Options > System)
@@ -37,6 +37,9 @@ Tested with QGIS 3.34, 3.44 and 4.4.
 4. Open the **Symbology** of a point layer and set the symbol layer type to
    **SVG Marker**. In the **SVG browser**, the emoji are under **EmOji-san**,
    one folder per category.
+
+The line always takes the latest release. To install a particular
+version, write `download/v1.1.0/` in place of `latest/download/`.
 
 ## Sets
 
@@ -132,7 +135,7 @@ No set has skin-tone variants.
   line at a time, so keep it on one line.
 
   ```python
-  SET='M'; import urllib.request as u; exec(u.urlopen('https://github.com/yfuru2454/emoji-san/releases/download/v1.1.0/install.py').read())
+  SET='M'; import urllib.request as u; exec(u.urlopen('https://github.com/yfuru2454/emoji-san/releases/latest/download/install.py').read())
   ```
 
 - Run the line again with another `SET` to switch. A bigger set adds emoji.
@@ -185,11 +188,12 @@ not last: after a restart, QGIS has the old symbols again.
 ## Check and uninstall
 
 Check the install. The last line it prints should start with
-`Result: ALL GOOD`. It also adds a layer with 8 emoji to the map;
-`DEMO=False;` in front leaves that out.
+`Result: ALL GOOD`. It also adds a temporary layer, "EmOji-san catalog",
+with every installed emoji and its name, grouped by category and fitted
+into the view of the map; `DEMO=False;` in front leaves that out.
 
 ```python
-import urllib.request as u; exec(u.urlopen('https://github.com/yfuru2454/emoji-san/releases/download/v1.1.0/check_install.py').read())
+import urllib.request as u; exec(u.urlopen('https://github.com/yfuru2454/emoji-san/releases/latest/download/check_install.py').read())
 ```
 
 Uninstall. It unregisters EmOji-san and turns off embedding in the current
@@ -200,7 +204,7 @@ left. Once no profile uses the folder, EmOji-san's lines also leave
 file stay in the Style Manager, where you can delete them.
 
 ```python
-import urllib.request as u; exec(u.urlopen('https://github.com/yfuru2454/emoji-san/releases/download/v1.1.0/uninstall.py').read())
+import urllib.request as u; exec(u.urlopen('https://github.com/yfuru2454/emoji-san/releases/latest/download/uninstall.py').read())
 ```
 
 ## If the SVG browser is slow
@@ -215,7 +219,7 @@ Each time it opens, the SVG browser lists the SVGs of every folder under
 - This line measures where the time goes and prints the `LIKELY CAUSES`:
 
   ```python
-  import urllib.request as u; exec(u.urlopen('https://github.com/yfuru2454/emoji-san/releases/download/v1.1.0/diagnose.py').read())
+  import urllib.request as u; exec(u.urlopen('https://github.com/yfuru2454/emoji-san/releases/latest/download/diagnose.py').read())
   ```
 
 ## QGIS 3 and QGIS 4
@@ -355,7 +359,7 @@ QGIS 3.34、3.44、4.4で動作を確認しています。
 2. 次の1行を貼り付けてEnterを押します。
 
    ```python
-   import urllib.request as u; exec(u.urlopen('https://github.com/yfuru2454/emoji-san/releases/download/v1.1.0/install.py').read())
+   import urllib.request as u; exec(u.urlopen('https://github.com/yfuru2454/emoji-san/releases/latest/download/install.py').read())
    ```
 
 3. コンソールに次のように表示されます。フォルダの場所は環境によって違います。
@@ -372,6 +376,8 @@ QGIS 3.34、3.44、4.4で動作を確認しています。
    ```
 
 4. ポイントレイヤの **シンボロジ** を開き、シンボルレイヤの種類を **SVGマーカー** にします。**SVGブラウザ** の **EmOji-san** の下に、カテゴリごとのフォルダで並んでいます。
+
+この1行は、いつも最新のリリースを入れます。特定の版を入れたいときは、`latest/download/`を`download/v1.1.0/`に書き換えてください。
 
 ## セット
 
@@ -466,7 +472,7 @@ QGIS 3.34、3.44、4.4で動作を確認しています。
 - セットを選ぶには、行の先頭に`SET='M';`を付けます。コンソールは1行ずつ実行するので、1行のまま貼ってください。
 
   ```python
-  SET='M'; import urllib.request as u; exec(u.urlopen('https://github.com/yfuru2454/emoji-san/releases/download/v1.1.0/install.py').read())
+  SET='M'; import urllib.request as u; exec(u.urlopen('https://github.com/yfuru2454/emoji-san/releases/latest/download/install.py').read())
   ```
 
 - 別の`SET`を付けて実行し直すと、セットが切り替わります。大きくすると絵文字が増えます。小さくすると、そのセットにない絵文字は削除され、それを使っていたマーカーは大きいセットに戻すまで`?`になります。別のプロファイルが同じフォルダを使っている場合は、共用のセットが維持され、その理由が表示されます。
@@ -495,16 +501,16 @@ QGIS 3.34、3.44、4.4で動作を確認しています。
 
 ## 確認とアンインストール
 
-インストールの確認です。最後の行が`Result: ALL GOOD`で始まっていれば問題ありません。絵文字8個のレイヤも地図に追加されます。先頭に`DEMO=False;`を付けると追加されません。
+インストールの確認です。最後の行が`Result: ALL GOOD`で始まっていれば問題ありません。入っている絵文字をすべて、カテゴリごとに名前付きで並べた一時レイヤ「EmOji-san catalog」も、いまの表示範囲に追加されます。先頭に`DEMO=False;`を付けると追加されません。
 
 ```python
-import urllib.request as u; exec(u.urlopen('https://github.com/yfuru2454/emoji-san/releases/download/v1.1.0/check_install.py').read())
+import urllib.request as u; exec(u.urlopen('https://github.com/yfuru2454/emoji-san/releases/latest/download/check_install.py').read())
 ```
 
 アンインストールです。現在のプロファイルの登録を外し、埋め込みを無効にします。別のプロファイルが同じフォルダを使っている間は、インストールしたファイルが残ります。自分で置いたファイルは残り、それらだけが残った場合はSVGパスの登録も維持されます。どのプロファイルもフォルダを使わなくなると、`startup.py`からEmOji-sanの行も消えます。自分で書いた行は残ります。スタイルファイルからインポートしたシンボルはスタイルマネージャから削除できます。
 
 ```python
-import urllib.request as u; exec(u.urlopen('https://github.com/yfuru2454/emoji-san/releases/download/v1.1.0/uninstall.py').read())
+import urllib.request as u; exec(u.urlopen('https://github.com/yfuru2454/emoji-san/releases/latest/download/uninstall.py').read())
 ```
 
 ## SVGブラウザが遅いとき
@@ -516,7 +522,7 @@ SVGブラウザは開くたびに、**設定 → オプション → システ�
 - 次の行は、どこで時間がかかっているかを測って、`LIKELY CAUSES`として表示します。
 
   ```python
-  import urllib.request as u; exec(u.urlopen('https://github.com/yfuru2454/emoji-san/releases/download/v1.1.0/diagnose.py').read())
+  import urllib.request as u; exec(u.urlopen('https://github.com/yfuru2454/emoji-san/releases/latest/download/diagnose.py').read())
   ```
 
 ## QGIS 3とQGIS 4

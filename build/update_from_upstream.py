@@ -426,9 +426,11 @@ def stage_update(root, staging, commit, version):
     for listing in ("core_list.txt", make_core.L_ONLY_LIST):
         if (root / listing).is_file():
             shutil.copyfile(root / listing, staging / listing)
-    make_core.build_core(staging, staging, rows)
+    if (root / make_core.README).is_file():
+        shutil.copyfile(root / make_core.README, staging / make_core.README)
+    written = make_core.build_core(staging, staging, rows)
     paths = [make_core.svg_path(row) for row in downloads]
-    paths += [upstream_commit, *make_core.OUTPUTS]
+    paths += [upstream_commit, *written]
     make_core.publish(root, staging, paths)
 
     for label, paths in (("new", [row["path"] for row in added]),

@@ -16,6 +16,8 @@ the M set leaves out, edited by hand) and index.csv, and writes:
                                file attached to a release.
   review_core.html             the S set on one page, for looking it over
                                (not committed)
+  README.md                    the emoji of each set, between the
+                               "sets:en" and "sets:ja" marker lines
 
 Run it after editing core_list.txt. update_from_upstream.py runs it as its
 last step.
@@ -30,6 +32,7 @@ import csv
 import html
 import os
 import pathlib
+import re
 import shutil
 import sys
 import tempfile
@@ -44,6 +47,17 @@ OUTPUTS = (pathlib.Path("index.csv"),
            pathlib.Path("review_core.html"))
 
 
+README = pathlib.Path("README.md")
+# The emoji of each set, written into README.md between these lines
+SETS_BLOCK = re.compile(
+    r"(<!-- sets:(en|ja) begin[^>]*-->\n).*?(<!-- sets:\2 end -->)", re.S)
+SETS_SUMMARY = {
+    "en": ("S: the {n} emoji", "M adds {n} emoji", "L adds {n} emoji"),
+    "ja": ("S：{n}個の絵文字", "Mで増える{n}個", "Lで増える{n}個"),
+}
+CATEGORY_ORDER = ("Smileys & Emotion", "People & Body", "Animals & Nature",
+                  "Food & Drink", "Travel & Places", "Activities", "Objects",
+                  "Symbols", "Flags")
 L_ONLY_LIST = "l_only_list.txt"
 M_CATEGORIES = ("Smileys & Emotion",)  # outside the map collection
 
@@ -228,6 +242,34 @@ function tg(el){el.classList.toggle('off');upd()}upd();
 </script></body></html>"""
 
 
+def sets_markdown(rows, language):
+    """Collapsible lists of the emoji each set adds, by category."""
+    blocks = []
+    for level, summary in zip("SML", SETS_SUMMARY[language]):
+        chosen = [r for r in rows if r["set"] == level]
+        lines = [f"<details>\n<summary>{summary.format(n=len(chosen))}"
+                 "</summary>\n"]
+        for category in CATEGORY_ORDER + tuple(sorted(
+                {r["category"] for r in chosen} - set(CATEGORY_ORDER))):
+            emoji = [r["emoji"] for r in chosen if r["category"] == category]
+            if emoji:
+                lines.append(f"**{category}** ({len(emoji)})<br>\n"
+                             + "".join(emoji) + "\n")
+        blocks.append("\n".join(lines) + "\n</details>\n")
+    return "\n".join(blocks)
+
+
+def write_readme(source, output, rows):
+    """README.md with its set lists brought up to date, if it has them."""
+    if not (source / README).is_file():
+        return []
+    text = (source / README).read_text(encoding="utf-8")
+    text = SETS_BLOCK.sub(lambda m: m[1] + sets_markdown(rows, m[2]) + m[3],
+                          text)
+    (output / README).write_text(text, encoding="utf-8")
+    return [README]
+
+
 def build_core(source, output, rows):
     """Build the CSV, style XML and review page in an isolated directory."""
     by_path = {r["path"]: r for r in rows}
@@ -315,17 +357,19 @@ def build_core(source, output, rows):
         for s in sections))
     (output / OUTPUTS[2]).write_text(page, encoding="utf-8")
     write_index(output, rows)
+    written = list(OUTPUTS) + write_readme(source, output, rows)
 
     counts = {s: sum(r["set"] == s for r in rows) for s in "SML"}
     print(f"sets: S {counts['S']}, M {counts['S'] + counts['M']}, "
           f"L {len(rows)}")
+    return written
 
 
 def main():
     with build_workspace(ROOT) as staging:
-        build_core(ROOT, staging, read_index(ROOT))
-        publish(ROOT, staging, OUTPUTS)
-    print("wrote index.csv, styles/emoji_san_core.xml, review_core.html")
+        written = build_core(ROOT, staging, read_index(ROOT))
+        publish(ROOT, staging, written)
+    print("wrote " + ", ".join(map(str, written)))
 
 
 if __name__ == "__main__":

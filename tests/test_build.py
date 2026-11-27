@@ -101,6 +101,8 @@ class AnnualBuildTest(unittest.TestCase):
             f"{FLAGS}/emoji_u1f3f4_e0067_e0062_e0065_e006e_e0067_e007f.svg":
                 b"emoji_u1f1ef_1f1f5.svg",
         }
+        self.write("README.md", "Sets\n<!-- sets:en begin -->\nold\n"
+                   "<!-- sets:en end -->\nrest\n".encode())
         self.write("l_only_list.txt",
                    b"# kept out of M\nTravel and Places/lighthouse\n")
 
@@ -156,6 +158,11 @@ class AnnualBuildTest(unittest.TestCase):
             "Flags/transgender_flag.svg": "L", "Flags/flag_japan.svg": "L",
             "Flags/flag_aland_islands.svg": "L", "Flags/flag_england.svg": "L",
         })
+        readme = (self.root / "README.md").read_text("utf-8")
+        self.assertNotIn("old", readme)
+        self.assertTrue(readme.endswith("<!-- sets:en end -->\nrest\n"))
+        self.assertIn("<summary>S: the 2 emoji</summary>", readme)
+        self.assertIn("**Flags** (4)<br>", readme)
         self.assertEqual(by_path["Flags/flag_england.svg"]["noto_file"],
                          f"{FLAGS}/emoji_u1f3f4_e0067_e0062_e0065_e006e_e0067_e007f.svg")
         self.assertEqual((self.root / make_core.svg_path(
